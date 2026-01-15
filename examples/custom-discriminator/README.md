@@ -11,7 +11,7 @@ npm install
 
 ## Configuration
 
-[envictus.ts](envictus.ts) defines:
+[env.config.ts](env.config.ts) defines:
 
 - **Schema**: Environment variables validated with Zod
 - **Discriminator**: Uses `APP_ENV` (instead of `NODE_ENV`) with values `local`, `staging`, and `prod`

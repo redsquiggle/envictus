@@ -11,7 +11,7 @@ npm install
 
 ## Configuration
 
-[envictus.ts](envictus.ts) defines:
+[env.config.ts](env.config.ts) defines:
 
 - **Schema**: Environment variables using Valibot's `v.pipe()` for transformation pipelines
 - **Discriminator**: Uses `NODE_ENV` to select environment-specific defaults

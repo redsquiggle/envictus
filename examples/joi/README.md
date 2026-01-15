@@ -11,7 +11,7 @@ npm install
 
 ## Configuration
 
-[envictus.ts](envictus.ts) defines:
+[env.config.ts](env.config.ts) defines:
 
 - **Schema**: Environment variables with Joi's built-in validators (`.port()`, `.uri()`, etc.)
 - **Discriminator**: Uses `NODE_ENV` to select environment-specific defaults

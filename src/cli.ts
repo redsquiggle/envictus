@@ -9,7 +9,7 @@ export const program = new Command()
 	.name("envictus")
 	.description("Type-safe environment variable management")
 	.version(VERSION)
-	.option("-c, --config <path>", "path to config file", "envictus.ts")
+	.option("-c, --config <path>", "path to config file", "env.config.ts")
 	.option("-m, --mode <value>", "override discriminator value (e.g., production)")
 	.option("--no-validate", "skip schema validation")
 	.option("-v, --verbose", "enable verbose output for debugging");

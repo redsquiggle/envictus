@@ -8,7 +8,7 @@ import { run } from "./commands/run.js";
 // Init command
 program
 	.command("init [path]")
-	.description("create a new envictus.ts config file")
+	.description("create a new env.config.ts config file")
 	.action(async (path?: string) => {
 		await init(path);
 	});

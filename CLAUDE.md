@@ -91,7 +91,7 @@ Optional body
 ## Architecture
 
 **Resolution pipeline**:
-1. Load config from `envictus.ts` (TypeScript via jiti)
+1. Load config from `env.config.ts` (TypeScript via jiti)
 2. Determine discriminator value (--mode flag → process.env → schema default → "development")
 3. Merge: schema defaults → environment-specific defaults → process.env → mode override
 4. Validate against Standard Schema

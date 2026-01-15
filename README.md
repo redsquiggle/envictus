@@ -10,7 +10,7 @@ npm install envictus zod
 
 ## Quick Start
 
-Create an `envictus.ts` config file:
+Create an `env.config.ts` config file:
 
 ```typescript
 import { z } from 'zod'
@@ -68,7 +68,7 @@ envictus check --mode production  # Check production config
 
 # Scaffold a new config file
 envictus init
-envictus init ./config/envictus.ts
+envictus init ./config/env.config.ts
 ```
 
 ## Configuration
@@ -143,7 +143,7 @@ Environment variables are resolved in this order (lowest to highest priority):
 ### Basic Node.js App
 
 ```typescript
-// envictus.ts
+// env.config.ts
 import { z } from 'zod'
 import { defineConfig } from 'envictus'
 
@@ -185,7 +185,7 @@ envictus -m test -- npm test
 ### Multi-Environment Deployment
 
 ```typescript
-// envictus.ts
+// env.config.ts
 import { z } from 'zod'
 import { defineConfig } from 'envictus'
 

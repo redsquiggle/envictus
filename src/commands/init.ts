@@ -2,10 +2,10 @@ import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const DEFAULT_CONFIG_NAME = "envictus.ts";
+const DEFAULT_CONFIG_NAME = "env.config.ts";
 
 /**
- * Initialize a new envictus.ts config file
+ * Initialize a new env.config.ts config file
  */
 export async function init(targetPath?: string): Promise<void> {
 	const configPath = resolve(targetPath ?? DEFAULT_CONFIG_NAME);
@@ -21,7 +21,7 @@ export async function init(targetPath?: string): Promise<void> {
 	console.log(`✓ Created ${configPath}`);
 	console.log("\nNext steps:");
 	console.log("  1. Install a schema library: npm install zod");
-	console.log("  2. Edit envictus.ts to define your environment schema");
+	console.log("  2. Edit env.config.ts to define your environment schema");
 	console.log("  3. Run: envictus -- npm start");
 }
 
