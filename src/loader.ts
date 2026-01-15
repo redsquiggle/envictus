@@ -13,27 +13,3 @@ export async function loadConfig<
 	throw new Error("Not implemented");
 }
 
-/**
- * Parse a .env file and return key-value pairs
- *
- * Supports:
- * - KEY=value
- * - KEY="quoted value"
- * - KEY='single quoted'
- * - # comments
- * - Empty lines
- */
-export function parseEnvFile(_contents: string): Record<string, string> {
-	// TODO: Implement .env parsing
-	throw new Error("Not implemented");
-}
-
-/**
- * Load environment variables from one or more .env files
- *
- * Files are loaded in order, with later files overriding earlier ones
- */
-export async function loadEnvFiles(_paths: string[]): Promise<Record<string, string>> {
-	// TODO: Implement
-	throw new Error("Not implemented");
-}

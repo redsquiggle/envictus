@@ -21,6 +21,7 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
+		"knip": "knip",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [
@@ -45,6 +46,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.11",
 		"@types/node": "^22.0.0",
+		"knip": "^5.81.0",
 		"typescript": "^5.9.3",
 		"zod": "^3.24.0"
 	}

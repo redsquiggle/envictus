@@ -9,20 +9,8 @@ export const program = new Command()
 	.description("Type-safe environment variable management")
 	.version(VERSION)
 	.option("-c, --config <path>", "path to config file", "envictus.ts")
-	.option("-e, --env <files>", "comma-separated list of .env files")
 	.option("-m, --mode <value>", "override discriminator value (e.g., production)")
 	.option("--no-validate", "skip schema validation");
-
-/**
- * Parse comma-separated env file list
- */
-export function parseEnvFiles(envOption: string | undefined): string[] {
-	if (!envOption) return [];
-	return envOption
-		.split(",")
-		.map((f) => f.trim())
-		.filter(Boolean);
-}
 
 /**
  * Format and print validation issues

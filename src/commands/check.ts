@@ -5,7 +5,6 @@ import { resolveEnv } from "../resolver.js";
 
 export interface CheckOptions {
 	config: string;
-	env?: string;
 	mode?: string;
 	validate: boolean;
 }
@@ -19,15 +18,10 @@ export interface CheckOptions {
  */
 export async function check(options: CheckOptions): Promise<number> {
 	const configPath = resolve(options.config);
-	const envFiles =
-		options.env
-			?.split(",")
-			.map((f) => f.trim())
-			.filter(Boolean) ?? [];
 
 	try {
 		const config = await loadConfig(configPath);
-		const result = await resolveEnv(config, envFiles, options.validate, options.mode);
+		const result = await resolveEnv(config, options.validate, options.mode);
 
 		if (result.issues && result.issues.length > 0) {
 			printValidationIssues(result.issues);

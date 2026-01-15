@@ -6,12 +6,10 @@ import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv } from "./t
  * Resolution order:
  * 1. --mode flag (modeOverride)
  * 2. process.env
- * 3. .env files
- * 4. Schema default
+ * 3. Schema default
  */
 export function getDiscriminatorValue<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	_config: EnvictusConfig<TSchema, TDiscriminator>,
-	_envFileVars: Record<string, string>,
 	_modeOverride?: string,
 ): string | undefined {
 	// TODO: Implement
@@ -41,13 +39,11 @@ export function getDefaultsForDiscriminator<
  * Resolution order (lowest to highest priority):
  * 1. Schema defaults (handled during validation)
  * 2. Discriminator-specific defaults (e.g., defaults.development)
- * 3. .env file(s)
- * 4. process.env
- * 5. --mode flag override (sets the discriminator key)
+ * 3. process.env
+ * 4. --mode flag override (sets the discriminator key)
  */
 export function mergeEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	_config: EnvictusConfig<TSchema, TDiscriminator>,
-	_envFileVars: Record<string, string>,
 	_modeOverride?: string,
 ): Record<string, string> {
 	// TODO: Implement
@@ -91,7 +87,6 @@ export async function validateEnv<TSchema extends ObjectSchema>(
  */
 export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	_config: EnvictusConfig<TSchema, TDiscriminator>,
-	_envFilePaths: string[],
 	_shouldValidate: boolean,
 	_modeOverride?: string,
 ): Promise<ResolvedEnv> {

@@ -21,7 +21,6 @@ program
 		const opts = program.opts();
 		const exitCode = await check({
 			config: opts.config,
-			env: opts.env,
 			mode: opts.mode,
 			validate: opts.validate,
 		});
@@ -40,7 +39,6 @@ program.argument("[command...]", "command to run with resolved environment").act
 	const exitCode = await run(
 		{
 			config: opts.config,
-			env: opts.env,
 			mode: opts.mode,
 			validate: opts.validate,
 		},
