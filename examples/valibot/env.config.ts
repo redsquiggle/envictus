@@ -4,8 +4,9 @@
  * - `v.unknown()` accepts any input, allowing subsequent transform/validation
  * - Boolean transform needed because env vars are strings ("true"/"1" -> boolean)
  */
+
+import { defineConfig } from "envictus";
 import * as v from "valibot";
-import { defineConfig } from "../../src/index.js";
 
 export default defineConfig({
 	schema: v.object({

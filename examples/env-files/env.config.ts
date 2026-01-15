@@ -1,5 +1,5 @@
+import { defineConfig, parseEnv } from "envictus";
 import { z } from "zod";
-import { defineConfig, parseEnv } from "../../src/index.js";
 
 // Example loading defaults from .env files
 export default defineConfig({

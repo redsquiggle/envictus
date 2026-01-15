@@ -1,5 +1,5 @@
+import { defineConfig } from "envictus";
 import { z } from "zod";
-import { defineConfig } from "../../src/index.js";
 
 // Example with a custom discriminator (not NODE_ENV)
 export default defineConfig({

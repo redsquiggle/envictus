@@ -4,8 +4,9 @@
  * - `.valid()` constrains to specific values (enum-like behavior)
  * - Built-in validators: `.port()` (1-65535), `.uri()`, etc.
  */
+
+import { defineConfig } from "envictus";
 import Joi from "joi";
-import { defineConfig } from "../../src/index.js";
 
 export default defineConfig({
 	schema: Joi.object({

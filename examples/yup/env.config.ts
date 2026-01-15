@@ -4,8 +4,9 @@
  * - `.oneOf()` constrains to specific values (enum-like behavior)
  * - `.default()` provides fallback value if field is undefined
  */
+
+import { defineConfig } from "envictus";
 import * as yup from "yup";
-import { defineConfig } from "../../src/index.js";
 
 export default defineConfig({
 	schema: yup.object({

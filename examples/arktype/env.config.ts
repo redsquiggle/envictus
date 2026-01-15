@@ -5,7 +5,7 @@
  * - Built-in validators: `string.url`, `string.numeric`, etc.
  */
 import { type } from "arktype";
-import { defineConfig } from "../../src/index.js";
+import { defineConfig } from "envictus";
 
 export default defineConfig({
 	schema: type({
