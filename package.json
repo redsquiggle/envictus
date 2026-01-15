@@ -1,6 +1,6 @@
 {
 	"name": "@redsquiggle/envictus",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "Type-safe environment variable management for Node.js",
 	"type": "module",
 	"publishConfig": {
