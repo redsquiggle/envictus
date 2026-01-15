@@ -25,7 +25,7 @@
 		"knip": "knip",
 		"prepare": "lefthook install",
 		"check": "pnpm run lint --fix && pnpm run check-types && pnpm run build && pnpm run knip --fix",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "vitest"
 	},
 	"keywords": [
 		"env",
@@ -54,6 +54,7 @@
 		"knip": "^5.81.0",
 		"lefthook": "^2.0.15",
 		"typescript": "^5.9.3",
+		"vitest": "^4.0.17",
 		"zod": "^3.24.0"
 	},
 	"pnpm": {

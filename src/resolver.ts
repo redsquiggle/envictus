@@ -45,16 +45,16 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 		merged = { ...defaults[mode] };
 	}
 
-	// If mode override was provided, set the discriminator value
-	if (modeOverride && discriminator) {
-		merged[discriminator as string] = modeOverride;
-	}
-
 	// Override with process.env values (only for keys that are set)
 	for (const [key, value] of Object.entries(process.env)) {
 		if (value !== undefined) {
 			merged[key] = value;
 		}
+	}
+
+	// If mode override was provided, set the discriminator value (after process.env so it takes precedence)
+	if (modeOverride && discriminator) {
+		merged[discriminator as string] = modeOverride;
 	}
 
 	// Validate if requested
