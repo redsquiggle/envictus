@@ -36,6 +36,7 @@
   "license": "MIT",
   "dependencies": {
     "@standard-schema/spec": "^1.1.0",
+    "commander": "^14.0.2",
     "jiti": "^2.0.0"
   },
   "devDependencies": {

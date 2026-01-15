@@ -1,42 +1,76 @@
-import type { CLIOptions } from './types.js'
+import { Command } from 'commander'
+import type { ValidationIssue } from './types.js'
+
+// Read version from package.json at build time
+const VERSION = '0.0.1'
+
+export const program = new Command()
+  .name('envictus')
+  .description('Type-safe environment variable management')
+  .version(VERSION)
+  .option('-c, --config <path>', 'path to config file', 'envictus.ts')
+  .option('-e, --env <files>', 'comma-separated list of .env files')
+  .option('-m, --mode <value>', 'override discriminator value (e.g., production)')
+  .option('--no-validate', 'skip schema validation')
 
 /**
- * Parse command line arguments
- *
- * Supports:
- * - envictus -- <command>
- * - envictus -c, --config <path>
- * - envictus --env <files>  (comma-separated)
- * - envictus -m, --mode <value>  (override discriminator value)
- * - envictus --no-validate
- * - envictus init
- * - envictus check
+ * Parse comma-separated env file list
  */
-export function parseArgs(args: string[]): CLIOptions {
-  // TODO: Implement argument parsing
-  throw new Error('Not implemented')
+export function parseEnvFiles(envOption: string | undefined): string[] {
+  if (!envOption) return []
+  return envOption.split(',').map((f) => f.trim()).filter(Boolean)
 }
 
 /**
- * Print usage information
+ * Format and print validation issues
  */
-export function printHelp(): void {
-  // TODO: Implement
-  throw new Error('Not implemented')
+export function printValidationIssues(issues: readonly ValidationIssue[]): void {
+  console.error('\n✗ Environment validation failed:\n')
+
+  for (const issue of issues) {
+    const path = issue.path?.map((p) => (typeof p === 'object' ? p.key : p)).join('.') || '(root)'
+    console.error(`  • ${path}: ${issue.message}`)
+  }
+
+  console.error('')
 }
 
 /**
- * Print version information
+ * Format environment variables for display
  */
-export function printVersion(): void {
-  // TODO: Implement
-  throw new Error('Not implemented')
+export function formatEnvForDisplay(env: Record<string, string>, mask = true): string {
+  const lines: string[] = []
+  const sortedKeys = Object.keys(env).sort()
+
+  for (const key of sortedKeys) {
+    const value = env[key] ?? ''
+    const displayValue = mask && isSensitiveKey(key) ? maskValue(value) : value
+    lines.push(`  ${key}=${displayValue}`)
+  }
+
+  return lines.join('\n')
 }
 
 /**
- * Format and print validation errors
+ * Check if an env key likely contains sensitive data
  */
-export function printValidationErrors(errors: unknown): void {
-  // TODO: Implement pretty error formatting
-  throw new Error('Not implemented')
+function isSensitiveKey(key: string): boolean {
+  const sensitivePatterns = [
+    /password/i,
+    /secret/i,
+    /key/i,
+    /token/i,
+    /auth/i,
+    /credential/i,
+    /private/i,
+  ]
+  return sensitivePatterns.some((pattern) => pattern.test(key))
+}
+
+/**
+ * Mask a sensitive value for display
+ */
+function maskValue(value: string): string {
+  if (value.length <= 4) return '****'
+  return `${value.slice(0, 2)}****${value.slice(-2)}`
 }

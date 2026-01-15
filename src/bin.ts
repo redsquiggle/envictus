@@ -1,51 +1,54 @@
 #!/usr/bin/env node
 
-import { parseArgs, printHelp, printVersion } from './cli.js'
+import { program } from './cli.js'
 import { init } from './commands/init.js'
 import { check } from './commands/check.js'
 import { run } from './commands/run.js'
 
-/**
- * CLI entry point
- */
-async function main(): Promise<void> {
-  const args = process.argv.slice(2)
+// Init command
+program
+  .command('init [path]')
+  .description('create a new envictus.ts config file')
+  .action(async (path?: string) => {
+    await init(path)
+  })
 
-  // Handle subcommands
-  if (args[0] === 'init') {
-    await init(args[1])
-    return
-  }
-
-  if (args[0] === 'check') {
-    const options = parseArgs(args.slice(1))
-    const exitCode = await check(options)
+// Check command
+program
+  .command('check')
+  .description('validate environment without running a command')
+  .action(async () => {
+    const opts = program.opts()
+    const exitCode = await check({
+      config: opts.config,
+      env: opts.env,
+      mode: opts.mode,
+      validate: opts.validate,
+    })
     process.exit(exitCode)
-  }
+  })
 
-  if (args[0] === '--help' || args[0] === '-h') {
-    printHelp()
-    return
-  }
+// Default run command (handles everything after --)
+program
+  .argument('[command...]', 'command to run with resolved environment')
+  .action(async (command: string[]) => {
+    // If no command provided and no subcommand matched, show help
+    if (command.length === 0) {
+      program.help()
+      return
+    }
 
-  if (args[0] === '--version' || args[0] === '-v') {
-    printVersion()
-    return
-  }
+    const opts = program.opts()
+    const exitCode = await run(
+      {
+        config: opts.config,
+        env: opts.env,
+        mode: opts.mode,
+        validate: opts.validate,
+      },
+      command,
+    )
+    process.exit(exitCode)
+  })
 
-  // Default: run command
-  const options = parseArgs(args)
-
-  if (options.command.length === 0) {
-    printHelp()
-    process.exit(1)
-  }
-
-  const exitCode = await run(options)
-  process.exit(exitCode)
-}
-
-main().catch((error) => {
-  console.error('envictus:', error.message)
-  process.exit(1)
-})
+program.parse()

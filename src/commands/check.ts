@@ -1,4 +1,14 @@
-import type { CLIOptions } from '../types.js'
+import { resolve } from 'node:path'
+import { formatEnvForDisplay, printValidationIssues } from '../cli.js'
+import { loadConfig } from '../loader.js'
+import { resolveEnv } from '../resolver.js'
+
+export interface CheckOptions {
+  config: string
+  env?: string
+  mode?: string
+  validate: boolean
+}
 
 /**
  * Check/validate environment without running a command
@@ -7,15 +17,26 @@ import type { CLIOptions } from '../types.js'
  *
  * @returns Exit code (0 = valid, 1 = invalid)
  */
-export async function check(options: Omit<CLIOptions, 'command'>): Promise<number> {
-  // TODO: Implement
-  throw new Error('Not implemented')
-}
+export async function check(options: CheckOptions): Promise<number> {
+  const configPath = resolve(options.config)
+  const envFiles = options.env?.split(',').map((f) => f.trim()).filter(Boolean) ?? []
 
-/**
- * Print the resolved environment variables (for debugging)
- */
-export function printResolvedEnv(env: Record<string, string>): void {
-  // TODO: Implement
-  throw new Error('Not implemented')
+  try {
+    const config = await loadConfig(configPath)
+    const result = await resolveEnv(config, envFiles, options.validate, options.mode)
+
+    if (result.issues && result.issues.length > 0) {
+      printValidationIssues(result.issues)
+      return 1
+    }
+
+    console.log('✓ Environment is valid\n')
+    console.log('Resolved environment:')
+    console.log(formatEnvForDisplay(result.env))
+
+    return 0
+  } catch (error) {
+    console.error('✗ Error:', error instanceof Error ? error.message : error)
+    return 1
+  }
 }

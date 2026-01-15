@@ -47,18 +47,6 @@ export type EnvictusConfig<
 }
 
 /**
- * CLI options parsed from command line arguments
- */
-export interface CLIOptions {
-  config: string
-  env: string[]
-  validate: boolean
-  /** Override the discriminator value (e.g., --mode production) */
-  mode: string | undefined
-  command: string[]
-}
-
-/**
  * A validation issue from standard-schema
  */
 export type ValidationIssue = StandardSchemaV1.Issue
