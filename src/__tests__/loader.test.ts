@@ -26,6 +26,32 @@ describe("loadConfig", () => {
 		expect(config.defaults?.prod).toBeDefined();
 	});
 
+	it("loads a Valibot config file", async () => {
+		const configPath = resolve(import.meta.dirname, "../../examples/valibot.ts");
+		const config = await loadConfig(configPath);
+
+		expect(config).toBeDefined();
+		expect(config.schema).toBeDefined();
+		expect(config.discriminator).toBe("NODE_ENV");
+		expect(config.defaults).toBeDefined();
+		expect(config.defaults?.development).toBeDefined();
+		expect(config.defaults?.production).toBeDefined();
+		expect(config.defaults?.test).toBeDefined();
+	});
+
+	it("loads an ArkType config file", async () => {
+		const configPath = resolve(import.meta.dirname, "../../examples/arktype.ts");
+		const config = await loadConfig(configPath);
+
+		expect(config).toBeDefined();
+		expect(config.schema).toBeDefined();
+		expect(config.discriminator).toBe("NODE_ENV");
+		expect(config.defaults).toBeDefined();
+		expect(config.defaults?.development).toBeDefined();
+		expect(config.defaults?.production).toBeDefined();
+		expect(config.defaults?.test).toBeDefined();
+	});
+
 	it("throws error for invalid config path", async () => {
 		await expect(loadConfig("/nonexistent/path.ts")).rejects.toThrow();
 	});
