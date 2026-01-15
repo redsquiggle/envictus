@@ -1,35 +1,35 @@
-import { existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
-const DEFAULT_CONFIG_NAME = 'envictus.ts'
+const DEFAULT_CONFIG_NAME = "envictus.ts";
 
 /**
  * Initialize a new envictus.ts config file
  */
 export async function init(targetPath?: string): Promise<void> {
-  const configPath = resolve(targetPath ?? DEFAULT_CONFIG_NAME)
+	const configPath = resolve(targetPath ?? DEFAULT_CONFIG_NAME);
 
-  if (existsSync(configPath)) {
-    console.error(`✗ Config file already exists: ${configPath}`)
-    process.exit(1)
-  }
+	if (existsSync(configPath)) {
+		console.error(`✗ Config file already exists: ${configPath}`);
+		process.exit(1);
+	}
 
-  const template = generateConfigTemplate()
-  await writeFile(configPath, template, 'utf-8')
+	const template = generateConfigTemplate();
+	await writeFile(configPath, template, "utf-8");
 
-  console.log(`✓ Created ${configPath}`)
-  console.log('\nNext steps:')
-  console.log('  1. Install a schema library: npm install zod')
-  console.log('  2. Edit envictus.ts to define your environment schema')
-  console.log('  3. Run: envictus -- npm start')
+	console.log(`✓ Created ${configPath}`);
+	console.log("\nNext steps:");
+	console.log("  1. Install a schema library: npm install zod");
+	console.log("  2. Edit envictus.ts to define your environment schema");
+	console.log("  3. Run: envictus -- npm start");
 }
 
 /**
  * Generate the default config file contents
  */
 export function generateConfigTemplate(): string {
-  return `import { z } from 'zod'
+	return `import { z } from 'zod'
 import { defineConfig } from 'envictus'
 
 export default defineConfig({
@@ -53,5 +53,5 @@ export default defineConfig({
     },
   },
 })
-`
+`;
 }

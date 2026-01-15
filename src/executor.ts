@@ -1,4 +1,4 @@
-import type { ChildProcess } from 'node:child_process'
+import type { ChildProcess } from "node:child_process";
 
 /**
  * Execute a command with the resolved environment variables
@@ -10,18 +10,15 @@ import type { ChildProcess } from 'node:child_process'
  *
  * @returns The child process exit code
  */
-export function executeCommand(
-  command: string[],
-  env: Record<string, string>,
-): Promise<number> {
-  // TODO: Implement using child_process.spawn
-  throw new Error('Not implemented')
+export function executeCommand(_command: string[], _env: Record<string, string>): Promise<number> {
+	// TODO: Implement using child_process.spawn
+	throw new Error("Not implemented");
 }
 
 /**
  * Setup signal forwarding from parent to child process
  */
-export function setupSignalForwarding(child: ChildProcess): void {
-  // TODO: Implement
-  throw new Error('Not implemented')
+export function setupSignalForwarding(_child: ChildProcess): void {
+	// TODO: Implement
+	throw new Error("Not implemented");
 }

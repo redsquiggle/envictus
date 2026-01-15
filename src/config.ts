@@ -1,4 +1,4 @@
-import type { EnvictusConfig, ObjectSchema, InferOutput } from './types.js'
+import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
 
 /**
  * Define an envictus configuration with full type inference
@@ -47,9 +47,8 @@ import type { EnvictusConfig, ObjectSchema, InferOutput } from './types.js'
  * })
  * ```
  */
-export function defineConfig<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema> = never,
->(config: EnvictusConfig<TSchema, TDiscriminator>): EnvictusConfig<TSchema, TDiscriminator> {
-  return config
+export function defineConfig<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema> = never>(
+	config: EnvictusConfig<TSchema, TDiscriminator>,
+): EnvictusConfig<TSchema, TDiscriminator> {
+	return config;
 }

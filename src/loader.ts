@@ -1,4 +1,4 @@
-import type { EnvictusConfig, InferOutput, ObjectSchema } from './types.js'
+import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
 
 /**
  * Load and execute a TypeScript/JavaScript config file
@@ -6,11 +6,11 @@ import type { EnvictusConfig, InferOutput, ObjectSchema } from './types.js'
  * Uses jiti for TypeScript support without requiring compilation
  */
 export async function loadConfig<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema> = never,
->(configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
-  // TODO: Implement using jiti or similar
-  throw new Error('Not implemented')
+	TSchema extends ObjectSchema,
+	TDiscriminator extends keyof InferOutput<TSchema> = never,
+>(_configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
+	// TODO: Implement using jiti or similar
+	throw new Error("Not implemented");
 }
 
 /**
@@ -23,9 +23,9 @@ export async function loadConfig<
  * - # comments
  * - Empty lines
  */
-export function parseEnvFile(contents: string): Record<string, string> {
-  // TODO: Implement .env parsing
-  throw new Error('Not implemented')
+export function parseEnvFile(_contents: string): Record<string, string> {
+	// TODO: Implement .env parsing
+	throw new Error("Not implemented");
 }
 
 /**
@@ -33,7 +33,7 @@ export function parseEnvFile(contents: string): Record<string, string> {
  *
  * Files are loaded in order, with later files overriding earlier ones
  */
-export async function loadEnvFiles(paths: string[]): Promise<Record<string, string>> {
-  // TODO: Implement
-  throw new Error('Not implemented')
+export async function loadEnvFiles(_paths: string[]): Promise<Record<string, string>> {
+	// TODO: Implement
+	throw new Error("Not implemented");
 }

@@ -1,47 +1,51 @@
 {
-  "name": "envictus",
-  "version": "0.0.1",
-  "description": "Type-safe environment variable management for Node.js",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "bin": {
-    "envictus": "./dist/bin.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "env",
-    "environment",
-    "variables",
-    "validation",
-    "standard-schema",
-    "zod",
-    "valibot",
-    "arktype",
-    "cli",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@standard-schema/spec": "^1.1.0",
-    "commander": "^14.0.2",
-    "jiti": "^2.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.9.3",
-    "zod": "^3.24.0"
-  }
+	"name": "envictus",
+	"version": "0.0.1",
+	"description": "Type-safe environment variable management for Node.js",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"bin": {
+		"envictus": "./dist/bin.js"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"env",
+		"environment",
+		"variables",
+		"validation",
+		"standard-schema",
+		"zod",
+		"valibot",
+		"arktype",
+		"cli",
+		"typescript"
+	],
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"@standard-schema/spec": "^1.1.0",
+		"commander": "^14.0.2",
+		"jiti": "^2.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.11",
+		"@types/node": "^22.0.0",
+		"typescript": "^5.9.3",
+		"zod": "^3.24.0"
+	}
 }

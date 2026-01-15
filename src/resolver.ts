@@ -1,4 +1,4 @@
-import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv } from './types.js'
+import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv } from "./types.js";
 
 /**
  * Get the current discriminator value from environment sources
@@ -9,16 +9,13 @@ import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv } from './t
  * 3. .env files
  * 4. Schema default
  */
-export function getDiscriminatorValue<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema>,
->(
-  config: EnvictusConfig<TSchema, TDiscriminator>,
-  envFileVars: Record<string, string>,
-  modeOverride?: string,
+export function getDiscriminatorValue<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
+	_config: EnvictusConfig<TSchema, TDiscriminator>,
+	_envFileVars: Record<string, string>,
+	_modeOverride?: string,
 ): string | undefined {
-  // TODO: Implement
-  throw new Error('Not implemented')
+	// TODO: Implement
+	throw new Error("Not implemented");
 }
 
 /**
@@ -29,13 +26,13 @@ export function getDiscriminatorValue<
  * returns config.defaults?.development
  */
 export function getDefaultsForDiscriminator<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema>,
+	TSchema extends ObjectSchema,
+	TDiscriminator extends keyof InferOutput<TSchema>,
 >(
-  config: EnvictusConfig<TSchema, TDiscriminator>,
-  discriminatorValue: string,
+	config: EnvictusConfig<TSchema, TDiscriminator>,
+	discriminatorValue: string,
 ): Partial<Record<string, unknown>> | undefined {
-  return config.defaults?.[discriminatorValue]
+	return config.defaults?.[discriminatorValue];
 }
 
 /**
@@ -48,16 +45,13 @@ export function getDefaultsForDiscriminator<
  * 4. process.env
  * 5. --mode flag override (sets the discriminator key)
  */
-export function mergeEnv<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema>,
->(
-  config: EnvictusConfig<TSchema, TDiscriminator>,
-  envFileVars: Record<string, string>,
-  modeOverride?: string,
+export function mergeEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
+	_config: EnvictusConfig<TSchema, TDiscriminator>,
+	_envFileVars: Record<string, string>,
+	_modeOverride?: string,
 ): Record<string, string> {
-  // TODO: Implement
-  throw new Error('Not implemented')
+	// TODO: Implement
+	throw new Error("Not implemented");
 }
 
 /**
@@ -69,41 +63,38 @@ export function mergeEnv<
  * Returns the validated env and any validation issues
  */
 export async function validateEnv<TSchema extends ObjectSchema>(
-  schema: TSchema,
-  env: Record<string, string>,
+	schema: TSchema,
+	env: Record<string, string>,
 ): Promise<ResolvedEnv> {
-  const result = await schema['~standard'].validate(env)
+	const result = await schema["~standard"].validate(env);
 
-  if (result.issues) {
-    return {
-      env,
-      issues: result.issues,
-    }
-  }
+	if (result.issues) {
+		return {
+			env,
+			issues: result.issues,
+		};
+	}
 
-  // Convert validated output back to string record for env vars
-  const validatedEnv: Record<string, string> = {}
-  for (const [key, value] of Object.entries(result.value)) {
-    if (value !== undefined && value !== null) {
-      validatedEnv[key] = String(value)
-    }
-  }
+	// Convert validated output back to string record for env vars
+	const validatedEnv: Record<string, string> = {};
+	for (const [key, value] of Object.entries(result.value)) {
+		if (value !== undefined && value !== null) {
+			validatedEnv[key] = String(value);
+		}
+	}
 
-  return { env: validatedEnv }
+	return { env: validatedEnv };
 }
 
 /**
  * Full resolution pipeline: merge all sources and validate
  */
-export async function resolveEnv<
-  TSchema extends ObjectSchema,
-  TDiscriminator extends keyof InferOutput<TSchema>,
->(
-  config: EnvictusConfig<TSchema, TDiscriminator>,
-  envFilePaths: string[],
-  shouldValidate: boolean,
-  modeOverride?: string,
+export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
+	_config: EnvictusConfig<TSchema, TDiscriminator>,
+	_envFilePaths: string[],
+	_shouldValidate: boolean,
+	_modeOverride?: string,
 ): Promise<ResolvedEnv> {
-  // TODO: Implement
-  throw new Error('Not implemented')
+	// TODO: Implement
+	throw new Error("Not implemented");
 }
