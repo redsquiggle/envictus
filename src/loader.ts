@@ -12,4 +12,3 @@ export async function loadConfig<
 	// TODO: Implement using jiti or similar
 	throw new Error("Not implemented");
 }
-
