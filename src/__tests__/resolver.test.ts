@@ -31,7 +31,7 @@ describe("resolveEnv", () => {
 			process.env.PORT = "3000";
 			process.env.HOST = "localhost";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -47,7 +47,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeDefined();
 			expect(result.issues?.length).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -92,7 +92,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -121,7 +121,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "production";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("8080");
@@ -145,7 +145,7 @@ describe("resolveEnv", () => {
 			process.env.NODE_ENV = "development";
 			process.env.PORT = "4000";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("4000");
@@ -172,7 +172,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true, "production");
+			const result = await resolveEnv(config, { validate: true, modeOverride: "production" });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("8080");
@@ -190,7 +190,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, false);
+			const result = await resolveEnv(config, { validate: false });
 
 			// No validation, so no issues
 			expect(result.issues).toBeUndefined();
@@ -208,7 +208,7 @@ describe("resolveEnv", () => {
 
 			process.env.ENABLED = "true";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.env.ENABLED).toBe("true");
 		});
@@ -222,7 +222,7 @@ describe("resolveEnv", () => {
 
 			process.env.COUNT = "42";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.env.COUNT).toBe("42");
 		});
@@ -240,7 +240,7 @@ describe("resolveEnv", () => {
 			process.env.PORT = "3000";
 			process.env.HOST = "localhost";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -256,7 +256,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeDefined();
 			expect(result.issues?.length).toBeGreaterThan(0);
@@ -270,7 +270,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -299,7 +299,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -319,7 +319,7 @@ describe("resolveEnv", () => {
 			process.env.PORT = "3000";
 			process.env.HOST = "localhost";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -335,7 +335,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeDefined();
 			expect(result.issues?.length).toBeGreaterThan(0);
@@ -349,7 +349,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -378,7 +378,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -398,7 +398,7 @@ describe("resolveEnv", () => {
 			process.env.PORT = "3000";
 			process.env.HOST = "localhost";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -414,7 +414,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeDefined();
 			expect(result.issues?.length).toBeGreaterThan(0);
@@ -428,7 +428,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -457,7 +457,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -477,7 +477,7 @@ describe("resolveEnv", () => {
 			process.env.PORT = "3000";
 			process.env.HOST = "localhost";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -493,7 +493,7 @@ describe("resolveEnv", () => {
 
 			process.env.PORT = "invalid";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeDefined();
 			expect(result.issues?.length).toBeGreaterThan(0);
@@ -507,7 +507,7 @@ describe("resolveEnv", () => {
 				}).unknown(),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -536,7 +536,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.PORT).toBe("3000");
@@ -568,7 +568,7 @@ describe("resolveEnv", () => {
 			// Set NODE_ENV to "staging" which has no defaults entry
 			process.env.NODE_ENV = "staging";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			// Should succeed without errors, using schema defaults
 			expect(result.issues).toBeUndefined();
@@ -589,7 +589,7 @@ describe("resolveEnv", () => {
 
 			process.env.NODE_ENV = "development";
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			// Should succeed without errors, using schema defaults
 			expect(result.issues).toBeUndefined();
@@ -604,7 +604,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.ALLOWED_HOSTS).toBe('["localhost","127.0.0.1"]');
@@ -624,7 +624,7 @@ describe("resolveEnv", () => {
 					.passthrough(),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			expect(result.env.CONFIG).toBe('{"host":"localhost","port":3000}');
@@ -638,7 +638,7 @@ describe("resolveEnv", () => {
 				}),
 			});
 
-			const result = await resolveEnv(config, true);
+			const result = await resolveEnv(config, { validate: true });
 
 			expect(result.issues).toBeUndefined();
 			// null values should be excluded from the env object

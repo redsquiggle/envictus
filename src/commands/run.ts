@@ -8,6 +8,7 @@ export interface RunOptions {
 	config: string;
 	mode?: string;
 	validate: boolean;
+	verbose?: boolean;
 }
 
 /**
@@ -26,7 +27,11 @@ export async function run(options: RunOptions, command: string[]): Promise<numbe
 
 	try {
 		const config = await loadConfig(configPath);
-		const result = await resolveEnv(config, options.validate, options.mode);
+		const result = await resolveEnv(config, {
+			validate: options.validate,
+			...(options.mode && { modeOverride: options.mode }),
+			...(options.verbose && { verbose: options.verbose }),
+		});
 
 		if (result.issues && result.issues.length > 0) {
 			printValidationIssues(result.issues);

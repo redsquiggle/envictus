@@ -89,7 +89,7 @@ schema: z.object({
 
 ### Discriminator
 
-The discriminator determines which defaults to use. Defaults to `NODE_ENV`:
+The discriminator determines which defaults to use. **Defaults to `NODE_ENV`** when not specified:
 
 ```typescript
 export default defineConfig({
@@ -224,6 +224,17 @@ export default defineConfig({
   },
 })
 ```
+
+## Debugging
+
+Use the `--verbose` (or `-v`) flag to enable debug output:
+
+```bash
+envictus --verbose -- npm run dev
+envictus -v check
+```
+
+This will show detailed information about discriminator resolution and mode selection.
 
 ## License
 

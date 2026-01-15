@@ -58,9 +58,6 @@ export function parseEnv(filePath: string, options: ParseEnvOptions = {}): Recor
 					console.warn(`[envictus] Env file not found: ${filePath}`);
 					return {};
 				case "ignore":
-					if (process.env.DEBUG || process.env.ENVICTUS_DEBUG) {
-						console.debug(`[envictus] Env file not found (ignored): ${filePath}`);
-					}
 					return {};
 			}
 		}

@@ -7,6 +7,7 @@ export interface CheckOptions {
 	config: string;
 	mode?: string;
 	validate: boolean;
+	verbose?: boolean;
 }
 
 /**
@@ -21,7 +22,11 @@ export async function check(options: CheckOptions): Promise<number> {
 
 	try {
 		const config = await loadConfig(configPath);
-		const result = await resolveEnv(config, options.validate, options.mode);
+		const result = await resolveEnv(config, {
+			validate: options.validate,
+			...(options.mode && { modeOverride: options.mode }),
+			...(options.verbose && { verbose: options.verbose }),
+		});
 
 		if (result.issues && result.issues.length > 0) {
 			printValidationIssues(result.issues);

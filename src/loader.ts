@@ -20,7 +20,18 @@ export async function loadConfig<
 	const config = (module as { default?: unknown }).default ?? module;
 
 	if (!config || typeof config !== "object" || !("schema" in config)) {
-		throw new Error(`Invalid config file: ${configPath}. Expected an object with a 'schema' property.`);
+		throw new Error(
+			`Invalid config file: ${configPath}\n\n` +
+				`Expected an object with a 'schema' property. Example:\n\n` +
+				`  import { defineConfig } from 'envictus'\n` +
+				`  import { z } from 'zod'\n\n` +
+				`  export default defineConfig({\n` +
+				`    schema: z.object({\n` +
+				`      NODE_ENV: z.enum(['development', 'production']).default('development'),\n` +
+				`      DATABASE_URL: z.string().url(),\n` +
+				`    }),\n` +
+				`  })\n`,
+		);
 	}
 
 	return config as EnvictusConfig<TSchema, TDiscriminator>;

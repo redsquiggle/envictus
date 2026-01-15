@@ -23,6 +23,7 @@ program
 			config: opts.config,
 			mode: opts.mode,
 			validate: opts.validate,
+			verbose: opts.verbose,
 		});
 		process.exit(exitCode);
 	});
@@ -41,6 +42,7 @@ program.argument("[command...]", "command to run with resolved environment").act
 			config: opts.config,
 			mode: opts.mode,
 			validate: opts.validate,
+			verbose: opts.verbose,
 		},
 		command,
 	);

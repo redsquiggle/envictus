@@ -1,5 +1,34 @@
 import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv, ValidationIssue } from "./types.js";
 
+/** Default discriminator field when none is specified */
+const DEFAULT_DISCRIMINATOR = "NODE_ENV";
+
+/** Options for environment resolution */
+export interface ResolveEnvOptions {
+	/** Override the discriminator value (e.g., "production") */
+	modeOverride?: string;
+	/** Whether to validate the environment against the schema */
+	validate: boolean;
+	/** Enable verbose output for debugging */
+	verbose?: boolean;
+}
+
+/**
+ * Create a logger that respects verbose mode
+ */
+function createLogger(verbose: boolean) {
+	return {
+		debug: (message: string) => {
+			if (verbose) {
+				console.log(`[envictus] ${message}`);
+			}
+		},
+		warn: (message: string) => {
+			console.warn(`[envictus] Warning: ${message}`);
+		},
+	};
+}
+
 /**
  * Convert a value to a string for environment variables
  */
@@ -26,18 +55,26 @@ function toEnvString(value: unknown): string {
  */
 export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	config: EnvictusConfig<TSchema, TDiscriminator>,
-	shouldValidate: boolean,
-	modeOverride?: string,
+	options: ResolveEnvOptions,
 ): Promise<ResolvedEnv> {
-	const { schema, discriminator, defaults } = config;
+	const { schema, defaults } = config;
+	const { modeOverride, validate: shouldValidate, verbose = false } = options;
+	const log = createLogger(verbose);
+
+	// Use NODE_ENV as the default discriminator when none is specified
+	const discriminator = config.discriminator ?? (DEFAULT_DISCRIMINATOR as TDiscriminator);
 
 	// Determine the current mode from modeOverride, process.env, or schema default
 	let mode: string | undefined;
 	if (modeOverride) {
 		mode = modeOverride;
-	} else if (discriminator) {
+		log.debug(`Using mode override: ${mode}`);
+	} else {
 		// First check process.env
 		mode = process.env[discriminator as string];
+		if (mode) {
+			log.debug(`Using ${String(discriminator)} from environment: ${mode}`);
+		}
 
 		// If not in process.env, try to get the schema's default value for the discriminator
 		if (!mode && defaults) {
@@ -48,6 +85,7 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 				const defaultValue = (defaultResult.value as Record<string, unknown>)[discriminator as string];
 				if (typeof defaultValue === "string") {
 					mode = defaultValue;
+					log.debug(`Using schema default for discriminator '${String(discriminator)}': ${mode}`);
 				}
 			}
 			// Fallback: if we couldn't get the default from the schema, use the first key from defaults
@@ -56,6 +94,11 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 				const availableModes = Object.keys(defaultsRecord);
 				if (availableModes.length > 0) {
 					mode = availableModes[0];
+					log.warn(
+						`Could not determine mode from '${String(discriminator)}'. ` +
+							`Falling back to first defaults key: '${mode}'. ` +
+							`Set ${String(discriminator)} in your environment or use --mode to specify explicitly.`,
+					);
 				}
 			}
 		}

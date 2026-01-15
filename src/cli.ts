@@ -1,8 +1,9 @@
+import { createRequire } from "node:module";
 import { Command } from "commander";
 import type { ValidationIssue } from "./types.js";
 
-// Read version from package.json at build time
-const VERSION = "0.0.1";
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require("../package.json") as { version: string };
 
 export const program = new Command()
 	.name("envictus")
@@ -10,7 +11,8 @@ export const program = new Command()
 	.version(VERSION)
 	.option("-c, --config <path>", "path to config file", "envictus.ts")
 	.option("-m, --mode <value>", "override discriminator value (e.g., production)")
-	.option("--no-validate", "skip schema validation");
+	.option("--no-validate", "skip schema validation")
+	.option("-v, --verbose", "enable verbose output for debugging");
 
 /**
  * Format and print validation issues
