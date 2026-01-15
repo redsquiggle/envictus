@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineConfig, parseEnv } from "../../src/index.js";
+import { defineConfig } from "../../src/index.js";
 
 export default defineConfig({
 	schema: z.object({
@@ -13,7 +13,7 @@ export default defineConfig({
 	defaults: {
 		// Defaults when NODE_ENV=development
 		development: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://localhost:5432/dev",
 			PORT: 3000,
 			DEBUG: true,
 			LOG_LEVEL: "debug",
@@ -21,7 +21,7 @@ export default defineConfig({
 
 		// Defaults when NODE_ENV=production
 		production: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://prod.example.com:5432/prod",
 			PORT: 8080,
 			DEBUG: false,
 			LOG_LEVEL: "warn",
@@ -29,7 +29,7 @@ export default defineConfig({
 
 		// Defaults when NODE_ENV=test
 		test: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://localhost:5432/test",
 			PORT: 3001,
 			DEBUG: false,
 			LOG_LEVEL: "error",

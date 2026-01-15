@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineConfig, parseEnv } from "../../src/index.js";
+import { defineConfig } from "../../src/index.js";
 
 // Example with a custom discriminator (not NODE_ENV)
 export default defineConfig({
@@ -12,20 +12,20 @@ export default defineConfig({
 	discriminator: "APP_ENV",
 	defaults: {
 		local: {
-			...parseEnv(".env", { onMissing: "ignore" }),
 			API_URL: "http://localhost:4000",
+			API_KEY: "local-dev-key",
 			TIMEOUT_MS: 10000,
 		},
 
 		staging: {
-			...parseEnv(".env", { onMissing: "ignore" }),
 			API_URL: "https://staging.api.example.com",
+			API_KEY: "staging-key",
 			TIMEOUT_MS: 5000,
 		},
 
 		prod: {
-			...parseEnv(".env", { onMissing: "ignore" }),
 			API_URL: "https://api.example.com",
+			API_KEY: "prod-key",
 			TIMEOUT_MS: 3000,
 		},
 	},

@@ -5,7 +5,7 @@
  * - Built-in validators: `string.url`, `string.numeric`, etc.
  */
 import { type } from "arktype";
-import { defineConfig, parseEnv } from "../../src/index.js";
+import { defineConfig } from "../../src/index.js";
 
 export default defineConfig({
 	schema: type({
@@ -18,21 +18,21 @@ export default defineConfig({
 	discriminator: "NODE_ENV",
 	defaults: {
 		development: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://localhost:5432/dev",
 			PORT: "3000",
 			DEBUG: "true",
 			LOG_LEVEL: "debug",
 		},
 
 		production: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://prod.example.com:5432/prod",
 			PORT: "8080",
 			DEBUG: "false",
 			LOG_LEVEL: "warn",
 		},
 
 		test: {
-			...parseEnv(".env", { onMissing: "ignore" }),
+			DATABASE_URL: "postgres://localhost:5432/test",
 			PORT: "3001",
 			DEBUG: "false",
 			LOG_LEVEL: "error",
