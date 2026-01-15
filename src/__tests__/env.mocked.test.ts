@@ -6,12 +6,14 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Create the mock function at the top level using vi.hoisted
+// Create the mock functions at the top level using vi.hoisted
 const mockReadFileSync = vi.hoisted(() => vi.fn());
+const mockExistsSync = vi.hoisted(() => vi.fn());
 
 // Mock node:fs before importing parseEnv
 vi.mock("node:fs", () => ({
 	readFileSync: mockReadFileSync,
+	existsSync: mockExistsSync,
 }));
 
 // Import after mock is set up
@@ -20,6 +22,8 @@ import { parseEnv } from "../env.js";
 describe("parseEnv error propagation (mocked fs)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Default: file exists so we proceed to readFileSync
+		mockExistsSync.mockReturnValue(true);
 	});
 
 	afterEach(() => {
@@ -100,35 +104,23 @@ describe("parseEnv error propagation (mocked fs)", () => {
 		});
 	});
 
-	describe("ENOENT handling with mocked fs", () => {
-		it("transforms ENOENT to user-friendly error with onMissing: 'error'", () => {
-			const notFoundError = new Error("ENOENT: no such file or directory") as NodeJS.ErrnoException;
-			notFoundError.code = "ENOENT";
-			mockReadFileSync.mockImplementation(() => {
-				throw notFoundError;
-			});
+	describe("file not found handling with mocked fs", () => {
+		it("transforms missing file to user-friendly error with onMissing: 'error'", () => {
+			mockExistsSync.mockReturnValue(false);
 
 			expect(() => parseEnv("/path/to/missing.env")).toThrow("Env file not found: /path/to/missing.env");
 		});
 
-		it("returns empty object for ENOENT with onMissing: 'ignore'", () => {
-			const notFoundError = new Error("ENOENT: no such file or directory") as NodeJS.ErrnoException;
-			notFoundError.code = "ENOENT";
-			mockReadFileSync.mockImplementation(() => {
-				throw notFoundError;
-			});
+		it("returns empty object for missing file with onMissing: 'ignore'", () => {
+			mockExistsSync.mockReturnValue(false);
 
 			const result = parseEnv("/path/to/missing.env", { onMissing: "ignore" });
 			expect(result).toEqual({});
 		});
 
-		it("logs warning and returns empty object for ENOENT with onMissing: 'warn'", () => {
+		it("logs warning and returns empty object for missing file with onMissing: 'warn'", () => {
 			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-			const notFoundError = new Error("ENOENT: no such file or directory") as NodeJS.ErrnoException;
-			notFoundError.code = "ENOENT";
-			mockReadFileSync.mockImplementation(() => {
-				throw notFoundError;
-			});
+			mockExistsSync.mockReturnValue(false);
 
 			const result = parseEnv("/path/to/missing.env", { onMissing: "warn" });
 			expect(result).toEqual({});
