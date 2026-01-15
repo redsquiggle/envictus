@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { formatEnvForDisplay, printValidationIssues } from "../cli.js";
+import { printValidationIssues } from "../cli.js";
 import { loadConfig } from "../loader.js";
 import { resolveEnv } from "../resolver.js";
 
@@ -28,10 +28,7 @@ export async function check(options: CheckOptions): Promise<number> {
 			return 1;
 		}
 
-		console.log("✓ Environment is valid\n");
-		console.log("Resolved environment:");
-		console.log(formatEnvForDisplay(result.env));
-
+		console.log("✓ Environment is valid");
 		return 0;
 	} catch (error) {
 		console.error("✗ Error:", error instanceof Error ? error.message : error);

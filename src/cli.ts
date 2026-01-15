@@ -25,35 +25,3 @@ export function printValidationIssues(issues: readonly ValidationIssue[]): void 
 
 	console.error("");
 }
-
-/**
- * Format environment variables for display
- */
-export function formatEnvForDisplay(env: Record<string, string>, mask = true): string {
-	const lines: string[] = [];
-	const sortedKeys = Object.keys(env).sort();
-
-	for (const key of sortedKeys) {
-		const value = env[key] ?? "";
-		const displayValue = mask && isSensitiveKey(key) ? maskValue(value) : value;
-		lines.push(`  ${key}=${displayValue}`);
-	}
-
-	return lines.join("\n");
-}
-
-/**
- * Check if an env key likely contains sensitive data
- */
-function isSensitiveKey(key: string): boolean {
-	const sensitivePatterns = [/password/i, /secret/i, /key/i, /token/i, /auth/i, /credential/i, /private/i];
-	return sensitivePatterns.some((pattern) => pattern.test(key));
-}
-
-/**
- * Mask a sensitive value for display
- */
-function maskValue(value: string): string {
-	if (value.length <= 4) return "****";
-	return `${value.slice(0, 2)}****${value.slice(-2)}`;
-}
