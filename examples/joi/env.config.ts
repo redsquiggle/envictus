@@ -5,7 +5,7 @@
  * - Built-in validators: `.port()` (1-65535), `.uri()`, etc.
  */
 
-import { defineConfig } from "envictus";
+import { defineConfig } from "@redsquiggle/envictus";
 import Joi from "joi";
 
 export default defineConfig({

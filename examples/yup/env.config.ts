@@ -5,7 +5,7 @@
  * - `.default()` provides fallback value if field is undefined
  */
 
-import { defineConfig } from "envictus";
+import { defineConfig } from "@redsquiggle/envictus";
 import * as yup from "yup";
 
 export default defineConfig({

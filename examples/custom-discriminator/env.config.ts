@@ -1,4 +1,4 @@
-import { defineConfig } from "envictus";
+import { defineConfig } from "@redsquiggle/envictus";
 import { z } from "zod";
 
 // Example with a custom discriminator (not NODE_ENV)

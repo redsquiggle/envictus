@@ -4,8 +4,9 @@
  * - Optional fields: `"key?"` syntax (e.g., `"DEBUG?"`)
  * - Built-in validators: `string.url`, `string.numeric`, etc.
  */
+
+import { defineConfig } from "@redsquiggle/envictus";
 import { type } from "arktype";
-import { defineConfig } from "envictus";
 
 export default defineConfig({
 	schema: type({

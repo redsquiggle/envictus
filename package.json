@@ -1,8 +1,15 @@
 {
-	"name": "envictus",
+	"name": "@redsquiggle/envictus",
 	"version": "0.0.1",
 	"description": "Type-safe environment variable management for Node.js",
 	"type": "module",
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/redsquiggle/envictus.git"
+	},
 	"exports": {
 		".": {
 			"import": "./dist/index.js",

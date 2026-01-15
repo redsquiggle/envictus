@@ -1,4 +1,4 @@
-import { defineConfig } from "envictus";
+import { defineConfig } from "@redsquiggle/envictus";
 import { z } from "zod";
 
 export default defineConfig({

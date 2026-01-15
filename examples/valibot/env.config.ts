@@ -5,7 +5,7 @@
  * - Boolean transform needed because env vars are strings ("true"/"1" -> boolean)
  */
 
-import { defineConfig } from "envictus";
+import { defineConfig } from "@redsquiggle/envictus";
 import * as v from "valibot";
 
 export default defineConfig({

@@ -1,4 +1,4 @@
-import { defineConfig, parseEnv } from "envictus";
+import { defineConfig, parseEnv } from "@redsquiggle/envictus";
 import { z } from "zod";
 
 // Example loading defaults from .env files
