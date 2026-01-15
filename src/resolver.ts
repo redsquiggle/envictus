@@ -41,8 +41,12 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 
 	// Start with environment-specific defaults if available
 	let merged: Record<string, unknown> = {};
-	if (mode && defaults?.[mode]) {
-		merged = { ...defaults[mode] };
+	if (mode && defaults) {
+		// Cast to Record for runtime access - type safety is enforced at config definition time
+		const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
+		if (defaultsRecord[mode]) {
+			merged = { ...defaultsRecord[mode] };
+		}
 	}
 
 	// Override with process.env values (only for keys that are set)

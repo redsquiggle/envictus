@@ -21,10 +21,19 @@ export type InferInput<T extends StandardSchemaV1> = StandardSchemaV1.InferInput
 export type EnvDefaults<TSchema extends ObjectSchema> = Partial<InferInput<TSchema>>;
 
 /**
+ * Extract the possible values from a discriminator field type.
+ * Works with string literal unions and enums.
+ */
+type DiscriminatorValues<
+	TSchema extends ObjectSchema,
+	TDiscriminator extends keyof InferOutput<TSchema>,
+> = InferOutput<TSchema>[TDiscriminator] extends string ? InferOutput<TSchema>[TDiscriminator] : string;
+
+/**
  * Configuration for discriminator-based defaults
  *
- * Since standard-schema doesn't expose enum values at the type level,
- * users must explicitly define their discriminator values and defaults.
+ * When a discriminator is specified, the defaults object keys are constrained
+ * to the possible values of that discriminator field.
  */
 export type EnvictusConfig<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema> = never> = {
 	/** The schema to validate environment variables against */
@@ -39,8 +48,12 @@ export type EnvictusConfig<TSchema extends ObjectSchema, TDiscriminator extends 
 	/**
 	 * Environment-specific defaults keyed by discriminator value.
 	 * For example: { development: { PORT: 3000 }, production: { PORT: 8080 } }
+	 *
+	 * Keys are constrained to the possible values of the discriminator field.
 	 */
-	defaults?: Record<string, EnvDefaults<TSchema>>;
+	defaults?: [TDiscriminator] extends [never]
+		? Record<string, EnvDefaults<TSchema>>
+		: Partial<Record<DiscriminatorValues<TSchema, TDiscriminator>, EnvDefaults<TSchema>>>;
 };
 
 /**
