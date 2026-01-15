@@ -5,7 +5,7 @@
  * - Built-in validators: `string.url`, `string.numeric`, etc.
  */
 import { type } from "arktype";
-import { defineConfig } from "../src/index.js";
+import { defineConfig, parseEnv } from "../../src/index.js";
 
 export default defineConfig({
 	schema: type({
@@ -20,18 +20,21 @@ export default defineConfig({
 
 	defaults: {
 		development: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: "3000",
 			DEBUG: "true",
 			LOG_LEVEL: "debug",
 		},
 
 		production: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: "8080",
 			DEBUG: "false",
 			LOG_LEVEL: "warn",
 		},
 
 		test: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: "3001",
 			DEBUG: "false",
 			LOG_LEVEL: "error",

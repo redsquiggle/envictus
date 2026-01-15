@@ -4,7 +4,7 @@ import { loadConfig } from "../loader.js";
 
 describe("loadConfig", () => {
 	it("loads a TypeScript config file with default export", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/envictus.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/zod/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();
@@ -16,7 +16,7 @@ describe("loadConfig", () => {
 	});
 
 	it("loads a config with custom discriminator", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/custom-discriminator.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/custom-discriminator/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();
@@ -27,7 +27,7 @@ describe("loadConfig", () => {
 	});
 
 	it("loads a Valibot config file", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/valibot.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/valibot/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();
@@ -40,7 +40,7 @@ describe("loadConfig", () => {
 	});
 
 	it("loads an ArkType config file", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/arktype.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/arktype/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();
@@ -53,7 +53,7 @@ describe("loadConfig", () => {
 	});
 
 	it("loads a Yup config file", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/yup.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/yup/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();
@@ -66,7 +66,7 @@ describe("loadConfig", () => {
 	});
 
 	it("loads a Joi config file", async () => {
-		const configPath = resolve(import.meta.dirname, "../../examples/joi.ts");
+		const configPath = resolve(import.meta.dirname, "../../examples/joi/envictus.ts");
 		const config = await loadConfig(configPath);
 
 		expect(config).toBeDefined();

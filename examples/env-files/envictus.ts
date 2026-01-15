@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineConfig, parseEnv } from "../src/index.js";
+import { defineConfig, parseEnv } from "../../src/index.js";
 
 // Example loading defaults from .env files
 export default defineConfig({
@@ -14,10 +14,16 @@ export default defineConfig({
 
 	defaults: {
 		development: {
-			API_URL: "https://localhost:3000/api",
 			...parseEnv(".env.local", { onMissing: "ignore" }),
+			API_URL: "https://localhost:3000/api",
 		},
-		test: {},
-		production: {},
+		test: {
+			API_URL: "https://localhost:3000/api",
+			API_KEY: "test-key",
+		},
+		production: {
+			API_URL: "https://api.example.com",
+			API_KEY: "prod-key",
+		},
 	},
 });

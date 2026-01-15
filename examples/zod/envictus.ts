@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineConfig } from "../src/index.js";
+import { defineConfig, parseEnv } from "../../src/index.js";
 
 export default defineConfig({
 	schema: z.object({
@@ -15,6 +15,7 @@ export default defineConfig({
 	defaults: {
 		// Defaults when NODE_ENV=development
 		development: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 3000,
 			DEBUG: true,
 			LOG_LEVEL: "debug",
@@ -22,6 +23,7 @@ export default defineConfig({
 
 		// Defaults when NODE_ENV=production
 		production: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 8080,
 			DEBUG: false,
 			LOG_LEVEL: "warn",
@@ -29,6 +31,7 @@ export default defineConfig({
 
 		// Defaults when NODE_ENV=test
 		test: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 3001,
 			DEBUG: false,
 			LOG_LEVEL: "error",

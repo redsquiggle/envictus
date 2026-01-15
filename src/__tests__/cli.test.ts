@@ -3,22 +3,23 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-// Use project root for tests so zod and other deps are available
 const PROJECT_ROOT = join(__dirname, "../..");
 const CLI_PATH = join(PROJECT_ROOT, "dist/bin.js");
-const TEST_DIR = join(PROJECT_ROOT, ".test-configs");
+const EXAMPLES_DIR = join(PROJECT_ROOT, "examples");
+// Use a unique fixtures dir based on whether this is src or dist to avoid race conditions
+const FIXTURES_DIR = join(PROJECT_ROOT, `.test-fixtures-${__dirname.includes("/src/") ? "src" : "dist"}`);
 
 /**
  * Execute CLI command and return result
  */
 function runCli(
 	args: string[],
-	options: { env?: Record<string, string> } = {},
+	options: { cwd?: string; env?: Record<string, string> } = {},
 ): { stdout: string; stderr: string; exitCode: number } {
 	try {
 		const result = execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
 			encoding: "utf-8",
-			cwd: PROJECT_ROOT,
+			cwd: options.cwd ?? PROJECT_ROOT,
 			env: { ...process.env, ...options.env },
 			stdio: ["pipe", "pipe", "pipe"],
 		});
@@ -34,32 +35,29 @@ function runCli(
 }
 
 /**
- * Create a test config file in .test-configs/
+ * Create a test fixture file
  */
-function createTestConfig(name: string, content: string): string {
-	const path = join(TEST_DIR, name);
+function createFixture(name: string, content: string): string {
+	const path = join(FIXTURES_DIR, name);
 	writeFileSync(path, content, "utf-8");
-	return `.test-configs/${name}`;
+	return path;
 }
 
 describe("CLI integration tests", () => {
 	beforeAll(() => {
-		// Ensure dist is built
 		if (!existsSync(CLI_PATH)) {
 			throw new Error("CLI not built. Run `pnpm build` first.");
 		}
 
-		// Create test directory
-		if (existsSync(TEST_DIR)) {
-			rmSync(TEST_DIR, { recursive: true });
+		if (existsSync(FIXTURES_DIR)) {
+			rmSync(FIXTURES_DIR, { recursive: true });
 		}
-		mkdirSync(TEST_DIR, { recursive: true });
+		mkdirSync(FIXTURES_DIR, { recursive: true });
 	});
 
 	afterAll(() => {
-		// Cleanup test directory
-		if (existsSync(TEST_DIR)) {
-			rmSync(TEST_DIR, { recursive: true });
+		if (existsSync(FIXTURES_DIR)) {
+			rmSync(FIXTURES_DIR, { recursive: true });
 		}
 	});
 
@@ -86,14 +84,13 @@ describe("CLI integration tests", () => {
 
 	describe("init command", () => {
 		it("creates a new config file", () => {
-			const configPath = join(TEST_DIR, "init-new-config.ts");
+			const configPath = join(FIXTURES_DIR, "init-config.ts");
 
-			// Ensure file doesn't exist
 			if (existsSync(configPath)) {
 				rmSync(configPath);
 			}
 
-			const result = runCli(["init", ".test-configs/init-new-config.ts"]);
+			const result = runCli(["init", configPath]);
 
 			expect(result.exitCode).toBe(0);
 			expect(result.stdout).toContain("Created");
@@ -101,10 +98,9 @@ describe("CLI integration tests", () => {
 		});
 
 		it("fails if config already exists", () => {
-			const configPath = join(TEST_DIR, "existing-config.ts");
-			writeFileSync(configPath, "// existing", "utf-8");
+			const configPath = createFixture("existing-config.ts", "// existing");
 
-			const result = runCli(["init", ".test-configs/existing-config.ts"]);
+			const result = runCli(["init", configPath]);
 
 			expect(result.exitCode).toBe(1);
 			expect(result.stderr).toContain("already exists");
@@ -112,59 +108,117 @@ describe("CLI integration tests", () => {
 	});
 
 	describe("check command", () => {
-		it("validates a valid config", () => {
-			const configPath = createTestConfig(
-				"valid-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+		describe("examples/zod", () => {
+			const exampleDir = join(EXAMPLES_DIR, "zod");
 
-export default defineConfig({
-  schema: z.object({
-    NODE_ENV: z.string().default('development'),
-    PORT: z.coerce.number().default(3000),
-  }),
-});
-`,
-			);
+			it("validates successfully", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
 
-			const result = runCli(["check", "--config", configPath]);
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout).toContain("Environment is valid");
+			});
 
-			expect(result.exitCode).toBe(0);
-			expect(result.stdout).toContain("Environment is valid");
+			it("validates with --mode development", () => {
+				const result = runCli(["check", "--mode", "development"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+
+			it("validates with --mode production", () => {
+				const result = runCli(["check", "--mode", "production"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+
+			it("validates with --mode test", () => {
+				const result = runCli(["check", "--mode", "test"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
 		});
 
-		it("reports validation errors for invalid config", () => {
-			const configPath = createTestConfig(
-				"invalid-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+		describe("examples/custom-discriminator", () => {
+			const exampleDir = join(EXAMPLES_DIR, "custom-discriminator");
 
-export default defineConfig({
-  schema: z.object({
-    REQUIRED_VAR: z.string(), // No default, not in env
-  }),
-});
-`,
-			);
+			it("validates successfully with default mode", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
 
-			const result = runCli(["check", "--config", configPath]);
+				expect(result.exitCode).toBe(0);
+			});
 
-			expect(result.exitCode).toBe(1);
-			expect(result.stderr).toContain("validation failed");
+			it("validates with --mode staging", () => {
+				const result = runCli(["check", "--mode", "staging"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+
+			it("validates with --mode prod", () => {
+				const result = runCli(["check", "--mode", "prod"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+		});
+
+		describe("examples/env-files", () => {
+			const exampleDir = join(EXAMPLES_DIR, "env-files");
+
+			it("validates with parseEnv loading .env.local", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+		});
+
+		describe("examples/arktype", () => {
+			const exampleDir = join(EXAMPLES_DIR, "arktype");
+
+			it("validates successfully", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+		});
+
+		describe("examples/valibot", () => {
+			const exampleDir = join(EXAMPLES_DIR, "valibot");
+
+			it("validates successfully", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+		});
+
+		describe("examples/yup", () => {
+			const exampleDir = join(EXAMPLES_DIR, "yup");
+
+			it("validates successfully", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
+		});
+
+		describe("examples/joi", () => {
+			const exampleDir = join(EXAMPLES_DIR, "joi");
+
+			it("validates successfully", () => {
+				const result = runCli(["check"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+			});
 		});
 
 		it("skips validation with --no-validate", () => {
-			const configPath = createTestConfig(
-				"skip-validate-config.ts",
+			const configPath = createFixture(
+				"skip-validate.ts",
 				`
 import { z } from 'zod';
 import { defineConfig } from '../src/index.js';
 
 export default defineConfig({
   schema: z.object({
-    REQUIRED_VAR: z.string(), // Would fail validation
+    REQUIRED_VAR: z.string(),
   }),
 });
 `,
@@ -173,37 +227,10 @@ export default defineConfig({
 			const result = runCli(["check", "--config", configPath, "--no-validate"]);
 
 			expect(result.exitCode).toBe(0);
-			expect(result.stdout).toContain("Environment is valid");
-		});
-
-		it("uses --mode to override discriminator", () => {
-			const configPath = createTestConfig(
-				"mode-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
-
-export default defineConfig({
-  schema: z.object({
-    NODE_ENV: z.enum(['development', 'production']).default('development'),
-    PORT: z.coerce.number(),
-  }),
-  discriminator: 'NODE_ENV',
-  defaults: {
-    development: { PORT: 3000 },
-    production: { PORT: 8080 },
-  },
-});
-`,
-			);
-
-			const result = runCli(["check", "--config", configPath, "--mode", "production"]);
-
-			expect(result.exitCode).toBe(0);
 		});
 
 		it("fails when config file does not exist", () => {
-			const result = runCli(["check", "--config", ".test-configs/nonexistent.ts"]);
+			const result = runCli(["check", "--config", "nonexistent.ts"]);
 
 			expect(result.exitCode).toBe(1);
 			expect(result.stderr).toContain("Error");
@@ -211,58 +238,88 @@ export default defineConfig({
 	});
 
 	describe("run command", () => {
-		it("executes command with resolved environment", () => {
-			const configPath = createTestConfig(
-				"run-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+		describe("examples/zod", () => {
+			const exampleDir = join(EXAMPLES_DIR, "zod");
 
-export default defineConfig({
-  schema: z.object({
-    TEST_VAR: z.string().default('hello'),
-  }),
-});
-`,
-			);
+			it("runs command with resolved environment", () => {
+				const result = runCli(["--mode", "development", "--", "node", "-e", '"console.log(process.env.PORT)"'], {
+					cwd: exampleDir,
+				});
 
-			// Use node to echo the env var
-			const result = runCli(["--config", configPath, "--", "node", "-e", '"console.log(process.env.TEST_VAR)"']);
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("3000");
+			});
 
-			expect(result.exitCode).toBe(0);
-			expect(result.stdout.trim()).toBe("hello");
+			it("applies mode-specific defaults for production", () => {
+				const result = runCli(["--mode", "production", "--", "node", "-e", '"console.log(process.env.PORT)"'], {
+					cwd: exampleDir,
+				});
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("8080");
+			});
+
+			it("applies mode-specific defaults for test", () => {
+				const result = runCli(["--mode", "test", "--", "node", "-e", '"console.log(process.env.PORT)"'], {
+					cwd: exampleDir,
+				});
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("3001");
+			});
+		});
+
+		describe("examples/custom-discriminator", () => {
+			const exampleDir = join(EXAMPLES_DIR, "custom-discriminator");
+
+			it("runs with local mode defaults", () => {
+				const result = runCli(["--", "node", "-e", '"console.log(process.env.API_URL)"'], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("http://localhost:4000");
+			});
+
+			it("runs with prod mode defaults", () => {
+				const result = runCli(["--mode", "prod", "--", "node", "-e", '"console.log(process.env.API_URL)"'], {
+					cwd: exampleDir,
+				});
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("https://api.example.com");
+			});
+		});
+
+		describe("examples/env-files", () => {
+			const exampleDir = join(EXAMPLES_DIR, "env-files");
+
+			it("loads API_KEY from .env.local via parseEnv", () => {
+				const result = runCli(["--mode", "development", "--", "node", "-e", '"console.log(process.env.API_KEY)"'], {
+					cwd: exampleDir,
+				});
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout.trim()).toBe("local-dev-key-12345");
+			});
 		});
 
 		it("passes through exit code from child process", () => {
-			const configPath = createTestConfig(
-				"exit-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+			const exampleDir = join(EXAMPLES_DIR, "zod");
 
-export default defineConfig({
-  schema: z.object({
-    NODE_ENV: z.string().default('test'),
-  }),
-});
-`,
-			);
-
-			const result = runCli(["--config", configPath, "--", "node", "-e", '"process.exit(42)"']);
+			const result = runCli(["--", "node", "-e", '"process.exit(42)"'], { cwd: exampleDir });
 
 			expect(result.exitCode).toBe(42);
 		});
 
 		it("fails validation before running command", () => {
-			const configPath = createTestConfig(
-				"fail-run-config.ts",
+			const configPath = createFixture(
+				"fail-run.ts",
 				`
 import { z } from 'zod';
 import { defineConfig } from '../src/index.js';
 
 export default defineConfig({
   schema: z.object({
-    REQUIRED: z.string(), // No default
+    REQUIRED: z.string(),
   }),
 });
 `,
@@ -274,47 +331,11 @@ export default defineConfig({
 			expect(result.stderr).toContain("validation failed");
 			expect(result.stdout).not.toContain("should not run");
 		});
-
-		it("applies mode-specific defaults", () => {
-			const configPath = createTestConfig(
-				"mode-run-config.ts",
-				`
-import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
-
-export default defineConfig({
-  schema: z.object({
-    NODE_ENV: z.enum(['development', 'production']).default('development'),
-    API_URL: z.string(),
-  }),
-  discriminator: 'NODE_ENV',
-  defaults: {
-    development: { API_URL: 'http://localhost:3000' },
-    production: { API_URL: 'https://api.example.com' },
-  },
-});
-`,
-			);
-
-			const result = runCli([
-				"--config",
-				configPath,
-				"--mode",
-				"production",
-				"--",
-				"node",
-				"-e",
-				'"console.log(process.env.API_URL)"',
-			]);
-
-			expect(result.exitCode).toBe(0);
-			expect(result.stdout.trim()).toBe("https://api.example.com");
-		});
 	});
 
 	describe("error handling", () => {
 		it("handles invalid TypeScript config", () => {
-			const configPath = createTestConfig("syntax-error.ts", "this is not valid typescript {{{");
+			const configPath = createFixture("syntax-error.ts", "this is not valid typescript {{{");
 
 			const result = runCli(["check", "--config", configPath]);
 
@@ -323,7 +344,7 @@ export default defineConfig({
 		});
 
 		it("handles config without default export", () => {
-			const configPath = createTestConfig(
+			const configPath = createFixture(
 				"no-export.ts",
 				`
 import { z } from 'zod';
@@ -334,6 +355,27 @@ const config = { schema: z.object({}) };
 			const result = runCli(["check", "--config", configPath]);
 
 			expect(result.exitCode).toBe(1);
+		});
+
+		it("reports validation errors for missing required fields", () => {
+			const configPath = createFixture(
+				"missing-required.ts",
+				`
+import { z } from 'zod';
+import { defineConfig } from '../src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    REQUIRED_VAR: z.string(),
+  }),
+});
+`,
+			);
+
+			const result = runCli(["check", "--config", configPath]);
+
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toContain("validation failed");
 		});
 	});
 });

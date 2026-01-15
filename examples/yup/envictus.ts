@@ -5,7 +5,7 @@
  * - `.default()` provides fallback value if field is undefined
  */
 import * as yup from "yup";
-import { defineConfig } from "../src/index.js";
+import { defineConfig, parseEnv } from "../../src/index.js";
 
 export default defineConfig({
 	schema: yup.object({
@@ -20,18 +20,21 @@ export default defineConfig({
 
 	defaults: {
 		development: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 3000,
 			DEBUG: true,
 			LOG_LEVEL: "debug",
 		},
 
 		production: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 8080,
 			DEBUG: false,
 			LOG_LEVEL: "warn",
 		},
 
 		test: {
+			...parseEnv(".env", { onMissing: "ignore" }),
 			PORT: 3001,
 			DEBUG: false,
 			LOG_LEVEL: "error",

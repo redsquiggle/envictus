@@ -31,12 +31,34 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 ): Promise<ResolvedEnv> {
 	const { schema, discriminator, defaults } = config;
 
-	// Determine the current mode from modeOverride, process.env, or undefined
+	// Determine the current mode from modeOverride, process.env, or schema default
 	let mode: string | undefined;
 	if (modeOverride) {
 		mode = modeOverride;
 	} else if (discriminator) {
+		// First check process.env
 		mode = process.env[discriminator as string];
+
+		// If not in process.env, try to get the schema's default value for the discriminator
+		if (!mode && defaults) {
+			// Try validating to get the default - some schemas support partial validation
+			const defaultResult = await schema["~standard"].validate({});
+			// If validation succeeds, extract the discriminator's default value
+			if (!defaultResult.issues && defaultResult.value) {
+				const defaultValue = (defaultResult.value as Record<string, unknown>)[discriminator as string];
+				if (typeof defaultValue === "string") {
+					mode = defaultValue;
+				}
+			}
+			// Fallback: if we couldn't get the default from the schema, use the first key from defaults
+			if (!mode) {
+				const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
+				const availableModes = Object.keys(defaultsRecord);
+				if (availableModes.length > 0) {
+					mode = availableModes[0];
+				}
+			}
+		}
 	}
 
 	// Start with environment-specific defaults if available
