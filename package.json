@@ -52,6 +52,7 @@
 		"@commitlint/config-conventional": "^20.3.1",
 		"@types/node": "^22.0.0",
 		"arktype": "^2.1.29",
+		"joi": "^18.0.2",
 		"knip": "^5.81.0",
 		"lefthook": "^2.0.15",
 		"typescript": "^5.9.3",

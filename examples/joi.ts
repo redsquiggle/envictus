@@ -1,0 +1,34 @@
+import Joi from "joi";
+import { defineConfig } from "../src/index.js";
+
+export default defineConfig({
+	schema: Joi.object({
+		NODE_ENV: Joi.string().valid("development", "production", "test").default("development"),
+		DATABASE_URL: Joi.string().uri().required(),
+		PORT: Joi.number().port().required(),
+		DEBUG: Joi.boolean().optional(),
+		LOG_LEVEL: Joi.string().valid("debug", "info", "warn", "error").default("info"),
+	}).unknown(),
+
+	discriminator: "NODE_ENV",
+
+	defaults: {
+		development: {
+			PORT: 3000,
+			DEBUG: true,
+			LOG_LEVEL: "debug",
+		},
+
+		production: {
+			PORT: 8080,
+			DEBUG: false,
+			LOG_LEVEL: "warn",
+		},
+
+		test: {
+			PORT: 3001,
+			DEBUG: false,
+			LOG_LEVEL: "error",
+		},
+	},
+});

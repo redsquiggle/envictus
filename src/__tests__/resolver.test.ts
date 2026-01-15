@@ -1,4 +1,5 @@
 import { type } from "arktype";
+import Joi from "joi";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as yup from "yup";
@@ -441,6 +442,85 @@ describe("resolveEnv", () => {
 					PORT: yup.number().required(),
 					DEBUG: yup.boolean().optional(),
 				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: {
+						PORT: 3000,
+						DEBUG: true,
+					},
+					production: {
+						PORT: 8080,
+						DEBUG: false,
+					},
+				},
+			});
+
+			process.env.NODE_ENV = "development";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.DEBUG).toBe("true");
+		});
+	});
+
+	describe("joi schema support", () => {
+		it("resolves environment variables with joi schema", async () => {
+			const config = defineConfig({
+				schema: Joi.object({
+					PORT: Joi.number().required(),
+					HOST: Joi.string().required(),
+				}).unknown(),
+			});
+
+			process.env.PORT = "3000";
+			process.env.HOST = "localhost";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.HOST).toBe("localhost");
+		});
+
+		it("returns validation issues for invalid joi values", async () => {
+			const config = defineConfig({
+				schema: Joi.object({
+					PORT: Joi.number().port().required(),
+				}).unknown(),
+			});
+
+			process.env.PORT = "invalid";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeDefined();
+			expect(result.issues?.length).toBeGreaterThan(0);
+		});
+
+		it("applies joi schema defaults", async () => {
+			const config = defineConfig({
+				schema: Joi.object({
+					PORT: Joi.number().default(3000),
+					DEBUG: Joi.boolean().default(false),
+				}).unknown(),
+			});
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.DEBUG).toBe("false");
+		});
+
+		it("applies discriminator defaults with joi schema", async () => {
+			const config = defineConfig({
+				schema: Joi.object({
+					NODE_ENV: Joi.string().valid("development", "production").default("development"),
+					PORT: Joi.number().required(),
+					DEBUG: Joi.boolean().optional(),
+				}).unknown(),
 				discriminator: "NODE_ENV",
 				defaults: {
 					development: {
