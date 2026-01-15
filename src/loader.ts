@@ -1,5 +1,4 @@
-import type { z } from 'zod'
-import type { EnvictusConfig } from './types.js'
+import type { EnvictusConfig, InferOutput, ObjectSchema } from './types.js'
 
 /**
  * Load and execute a TypeScript/JavaScript config file
@@ -7,8 +6,8 @@ import type { EnvictusConfig } from './types.js'
  * Uses jiti for TypeScript support without requiring compilation
  */
 export async function loadConfig<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema> = 'NODE_ENV',
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema> = never,
 >(configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
   // TODO: Implement using jiti or similar
   throw new Error('Not implemented')

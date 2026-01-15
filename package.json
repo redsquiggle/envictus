@@ -25,16 +25,17 @@
     "environment",
     "variables",
     "validation",
+    "standard-schema",
     "zod",
+    "valibot",
+    "arktype",
     "cli",
     "typescript"
   ],
   "author": "",
   "license": "MIT",
-  "peerDependencies": {
-    "zod": "^3.0.0"
-  },
   "dependencies": {
+    "@standard-schema/spec": "^1.1.0",
     "jiti": "^2.0.0"
   },
   "devDependencies": {

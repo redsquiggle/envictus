@@ -10,24 +10,28 @@ export default defineConfig({
     LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   }),
 
-  // Defaults when NODE_ENV=development
-  developmentDefaults: {
-    PORT: 3000,
-    DEBUG: true,
-    LOG_LEVEL: 'debug',
-  },
+  discriminator: 'NODE_ENV',
 
-  // Defaults when NODE_ENV=production
-  productionDefaults: {
-    PORT: 8080,
-    DEBUG: false,
-    LOG_LEVEL: 'warn',
-  },
+  defaults: {
+    // Defaults when NODE_ENV=development
+    development: {
+      PORT: 3000,
+      DEBUG: true,
+      LOG_LEVEL: 'debug',
+    },
 
-  // Defaults when NODE_ENV=test
-  testDefaults: {
-    PORT: 3001,
-    DEBUG: false,
-    LOG_LEVEL: 'error',
+    // Defaults when NODE_ENV=production
+    production: {
+      PORT: 8080,
+      DEBUG: false,
+      LOG_LEVEL: 'warn',
+    },
+
+    // Defaults when NODE_ENV=test
+    test: {
+      PORT: 3001,
+      DEBUG: false,
+      LOG_LEVEL: 'error',
+    },
   },
 })

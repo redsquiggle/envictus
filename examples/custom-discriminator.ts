@@ -12,18 +12,20 @@ export default defineConfig({
 
   discriminator: 'APP_ENV',
 
-  localDefaults: {
-    API_URL: 'http://localhost:4000',
-    TIMEOUT_MS: 10000,
-  },
+  defaults: {
+    local: {
+      API_URL: 'http://localhost:4000',
+      TIMEOUT_MS: 10000,
+    },
 
-  stagingDefaults: {
-    API_URL: 'https://staging.api.example.com',
-    TIMEOUT_MS: 5000,
-  },
+    staging: {
+      API_URL: 'https://staging.api.example.com',
+      TIMEOUT_MS: 5000,
+    },
 
-  prodDefaults: {
-    API_URL: 'https://api.example.com',
-    TIMEOUT_MS: 3000,
+    prod: {
+      API_URL: 'https://api.example.com',
+      TIMEOUT_MS: 3000,
+    },
   },
 })

@@ -1,5 +1,4 @@
-import type { z } from 'zod'
-import type { EnvictusConfig, ResolvedEnv } from './types.js'
+import type { EnvictusConfig, InferOutput, ObjectSchema, ResolvedEnv } from './types.js'
 
 /**
  * Get the current discriminator value from environment sources
@@ -11,8 +10,8 @@ import type { EnvictusConfig, ResolvedEnv } from './types.js'
  * 4. Schema default
  */
 export function getDiscriminatorValue<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema>,
 >(
   config: EnvictusConfig<TSchema, TDiscriminator>,
   envFileVars: Record<string, string>,
@@ -27,32 +26,31 @@ export function getDiscriminatorValue<
  *
  * @example
  * If discriminator is 'NODE_ENV' and value is 'development',
- * returns config.developmentDefaults
+ * returns config.defaults?.development
  */
 export function getDefaultsForDiscriminator<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema>,
 >(
   config: EnvictusConfig<TSchema, TDiscriminator>,
   discriminatorValue: string,
-): Partial<z.input<TSchema>> | undefined {
-  // TODO: Implement
-  throw new Error('Not implemented')
+): Partial<Record<string, unknown>> | undefined {
+  return config.defaults?.[discriminatorValue]
 }
 
 /**
  * Merge environment variables from all sources
  *
  * Resolution order (lowest to highest priority):
- * 1. Zod schema defaults (handled during validation)
- * 2. Discriminator-specific defaults (e.g., developmentDefaults)
+ * 1. Schema defaults (handled during validation)
+ * 2. Discriminator-specific defaults (e.g., defaults.development)
  * 3. .env file(s)
  * 4. process.env
  * 5. --mode flag override (sets the discriminator key)
  */
 export function mergeEnv<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema>,
 >(
   config: EnvictusConfig<TSchema, TDiscriminator>,
   envFileVars: Record<string, string>,
@@ -65,22 +63,41 @@ export function mergeEnv<
 /**
  * Validate merged environment variables against the schema
  *
- * Returns the validated env and any validation errors
+ * Uses the standard-schema validate method which works with any
+ * compliant schema library (Zod, Valibot, ArkType, etc.)
+ *
+ * Returns the validated env and any validation issues
  */
-export function validateEnv<TSchema extends z.ZodObject<z.ZodRawShape>>(
+export async function validateEnv<TSchema extends ObjectSchema>(
   schema: TSchema,
   env: Record<string, string>,
-): ResolvedEnv {
-  // TODO: Implement
-  throw new Error('Not implemented')
+): Promise<ResolvedEnv> {
+  const result = await schema['~standard'].validate(env)
+
+  if (result.issues) {
+    return {
+      env,
+      issues: result.issues,
+    }
+  }
+
+  // Convert validated output back to string record for env vars
+  const validatedEnv: Record<string, string> = {}
+  for (const [key, value] of Object.entries(result.value)) {
+    if (value !== undefined && value !== null) {
+      validatedEnv[key] = String(value)
+    }
+  }
+
+  return { env: validatedEnv }
 }
 
 /**
  * Full resolution pipeline: merge all sources and validate
  */
 export async function resolveEnv<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema>,
 >(
   config: EnvictusConfig<TSchema, TDiscriminator>,
   envFilePaths: string[],

@@ -1,61 +1,50 @@
-import type { z } from 'zod'
+import type { StandardSchemaV1 } from '@standard-schema/spec'
 
 /**
- * Extract the enum values from a Zod enum schema
+ * A schema that validates to an object with string keys
  */
-type ZodEnumValues<T> = T extends z.ZodEnum<infer U> ? U[number] : never
+export type ObjectSchema = StandardSchemaV1<unknown, Record<string, unknown>>
 
 /**
- * Extract the enum values from a Zod schema with a default
+ * Infer the output type of a standard schema
  */
-type ZodDefaultEnumValues<T> = T extends z.ZodDefault<infer U>
-  ? ZodEnumValues<U>
-  : ZodEnumValues<T>
+export type InferOutput<T extends StandardSchemaV1> = StandardSchemaV1.InferOutput<T>
 
 /**
- * Generate `${enumValue}Defaults` keys from a discriminator field
+ * Infer the input type of a standard schema
  */
-type DiscriminatorDefaultsKeys<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
-> = `${ZodDefaultEnumValues<TSchema['shape'][TDiscriminator]>}Defaults`
+export type InferInput<T extends StandardSchemaV1> = StandardSchemaV1.InferInput<T>
 
 /**
  * The defaults object type - partial input of the schema
  */
-type EnvDefaults<TSchema extends z.ZodObject<z.ZodRawShape>> = Partial<
-  z.input<TSchema>
->
+export type EnvDefaults<TSchema extends ObjectSchema> = Partial<InferInput<TSchema>>
 
 /**
- * Base config without discriminator-specific defaults
- */
-type BaseConfig<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
-> = {
-  schema: TSchema
-  discriminator?: TDiscriminator
-}
-
-/**
- * Discriminator-specific defaults as optional keys
- */
-type DiscriminatorDefaults<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema>,
-> = {
-  [K in DiscriminatorDefaultsKeys<TSchema, TDiscriminator>]?: EnvDefaults<TSchema>
-}
-
-/**
- * Full config type combining base config with discriminator defaults
+ * Configuration for discriminator-based defaults
+ *
+ * Since standard-schema doesn't expose enum values at the type level,
+ * users must explicitly define their discriminator values and defaults.
  */
 export type EnvictusConfig<
-  TSchema extends z.ZodObject<z.ZodRawShape>,
-  TDiscriminator extends keyof z.infer<TSchema> = 'NODE_ENV',
-> = BaseConfig<TSchema, TDiscriminator> &
-  DiscriminatorDefaults<TSchema, TDiscriminator>
+  TSchema extends ObjectSchema,
+  TDiscriminator extends keyof InferOutput<TSchema> = never,
+> = {
+  /** The schema to validate environment variables against */
+  schema: TSchema
+
+  /**
+   * The discriminator field used to select environment-specific defaults.
+   * Typically 'NODE_ENV' or similar.
+   */
+  discriminator?: TDiscriminator
+
+  /**
+   * Environment-specific defaults keyed by discriminator value.
+   * For example: { development: { PORT: 3000 }, production: { PORT: 8080 } }
+   */
+  defaults?: Record<string, EnvDefaults<TSchema>>
+}
 
 /**
  * CLI options parsed from command line arguments
@@ -70,9 +59,14 @@ export interface CLIOptions {
 }
 
 /**
+ * A validation issue from standard-schema
+ */
+export type ValidationIssue = StandardSchemaV1.Issue
+
+/**
  * Result of merging and validating environment variables
  */
 export interface ResolvedEnv {
   env: Record<string, string>
-  errors?: z.ZodError
+  issues?: readonly ValidationIssue[]
 }
