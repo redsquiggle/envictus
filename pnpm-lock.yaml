@@ -15,7 +15,7 @@ importers:
         specifier: ^14.0.2
         version: 14.0.2
       jiti:
-        specifier: ^2.0.0
+        specifier: ^2.6.1
         version: 2.6.1
     devDependencies:
       '@biomejs/biome':

@@ -43,7 +43,6 @@ export async function run(options: RunOptions, command: string[]): Promise<numbe
 		const child = spawn(cmd, args, {
 			stdio: "inherit",
 			env: { ...process.env, ...result.env },
-			shell: true,
 		});
 
 		return new Promise((resolvePromise) => {

@@ -1,3 +1,4 @@
+import { createJiti } from "jiti";
 import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
 
 /**
@@ -8,7 +9,19 @@ import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
 export async function loadConfig<
 	TSchema extends ObjectSchema,
 	TDiscriminator extends keyof InferOutput<TSchema> = never,
->(_configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
-	// TODO: Implement using jiti or similar
-	throw new Error("Not implemented");
+>(configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
+	const jiti = createJiti(import.meta.url, {
+		interopDefault: true,
+	});
+
+	const module = await jiti.import(configPath);
+
+	// Handle both default exports and named exports
+	const config = (module as { default?: unknown }).default ?? module;
+
+	if (!config || typeof config !== "object" || !("schema" in config)) {
+		throw new Error(`Invalid config file: ${configPath}. Expected an object with a 'schema' property.`);
+	}
+
+	return config as EnvictusConfig<TSchema, TDiscriminator>;
 }
