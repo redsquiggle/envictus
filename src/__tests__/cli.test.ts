@@ -1,13 +1,11 @@
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const PROJECT_ROOT = join(__dirname, "../..");
 const CLI_PATH = join(PROJECT_ROOT, "dist/bin.js");
 const EXAMPLES_DIR = join(PROJECT_ROOT, "examples");
-// Use a unique fixtures dir based on whether this is src or dist to avoid race conditions
-const FIXTURES_DIR = join(PROJECT_ROOT, `.test-fixtures-${__dirname.includes("/src/") ? "src" : "dist"}`);
 
 /**
  * Execute CLI command and return result
@@ -34,30 +32,28 @@ function runCli(
 	}
 }
 
-/**
- * Create a test fixture file
- */
-function createFixture(name: string, content: string): string {
-	const path = join(FIXTURES_DIR, name);
-	writeFileSync(path, content, "utf-8");
-	return path;
-}
-
 describe("CLI integration tests", () => {
+	let fixturesDir: string;
+
+	function createFixture(name: string, content: string): string {
+		const path = join(fixturesDir, name);
+		writeFileSync(path, content, "utf-8");
+		return path;
+	}
+
 	beforeAll(() => {
 		if (!existsSync(CLI_PATH)) {
 			throw new Error("CLI not built. Run `pnpm build` first.");
 		}
 
-		if (existsSync(FIXTURES_DIR)) {
-			rmSync(FIXTURES_DIR, { recursive: true });
-		}
-		mkdirSync(FIXTURES_DIR, { recursive: true });
+		const fixturesRoot = join(PROJECT_ROOT, ".test-fixtures");
+		mkdirSync(fixturesRoot, { recursive: true });
+		fixturesDir = mkdtempSync(join(fixturesRoot, "run-"));
 	});
 
 	afterAll(() => {
-		if (existsSync(FIXTURES_DIR)) {
-			rmSync(FIXTURES_DIR, { recursive: true });
+		if (existsSync(fixturesDir)) {
+			rmSync(fixturesDir, { recursive: true });
 		}
 	});
 
@@ -84,7 +80,7 @@ describe("CLI integration tests", () => {
 
 	describe("init command", () => {
 		it("creates a new config file", () => {
-			const configPath = join(FIXTURES_DIR, "init-config.ts");
+			const configPath = join(fixturesDir, "init-config.ts");
 
 			if (existsSync(configPath)) {
 				rmSync(configPath);
@@ -214,7 +210,7 @@ describe("CLI integration tests", () => {
 				"skip-validate.ts",
 				`
 import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+import { defineConfig } from '../../src/index.js';
 
 export default defineConfig({
   schema: z.object({
@@ -315,7 +311,7 @@ export default defineConfig({
 				"fail-run.ts",
 				`
 import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+import { defineConfig } from '../../src/index.js';
 
 export default defineConfig({
   schema: z.object({
@@ -362,7 +358,7 @@ const config = { schema: z.object({}) };
 				"missing-required.ts",
 				`
 import { z } from 'zod';
-import { defineConfig } from '../src/index.js';
+import { defineConfig } from '../../src/index.js';
 
 export default defineConfig({
   schema: z.object({
