@@ -23,7 +23,7 @@ export default defineConfig({
 		},
 		production: {
 			API_URL: "https://api.example.com",
-			API_KEY: "prod-key",
+			// API_KEY required with no default in prod
 		},
 	},
 });
