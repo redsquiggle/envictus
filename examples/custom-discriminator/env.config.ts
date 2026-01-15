@@ -9,9 +9,7 @@ export default defineConfig({
 		API_KEY: z.string().min(1),
 		TIMEOUT_MS: z.coerce.number().positive().default(5000),
 	}),
-
 	discriminator: "APP_ENV",
-
 	defaults: {
 		local: {
 			...parseEnv(".env", { onMissing: "ignore" }),

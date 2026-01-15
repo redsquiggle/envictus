@@ -20,9 +20,7 @@ export default defineConfig({
 		),
 		LOG_LEVEL: v.optional(v.picklist(["debug", "info", "warn", "error"]), "info"),
 	}),
-
 	discriminator: "NODE_ENV",
-
 	defaults: {
 		development: {
 			...parseEnv(".env", { onMissing: "ignore" }),

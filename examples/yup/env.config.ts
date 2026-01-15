@@ -15,9 +15,7 @@ export default defineConfig({
 		DEBUG: yup.boolean().optional(),
 		LOG_LEVEL: yup.string().oneOf(["debug", "info", "warn", "error"]).default("info"),
 	}),
-
 	discriminator: "NODE_ENV",
-
 	defaults: {
 		development: {
 			...parseEnv(".env", { onMissing: "ignore" }),

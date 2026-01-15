@@ -15,9 +15,7 @@ export default defineConfig({
 		DEBUG: Joi.boolean().optional(),
 		LOG_LEVEL: Joi.string().valid("debug", "info", "warn", "error").default("info"),
 	}).unknown(),
-
 	discriminator: "NODE_ENV",
-
 	defaults: {
 		development: {
 			...parseEnv(".env", { onMissing: "ignore" }),

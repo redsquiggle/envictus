@@ -9,9 +9,7 @@ export default defineConfig({
 		DEBUG: z.coerce.boolean().optional(),
 		LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 	}),
-
 	discriminator: "NODE_ENV",
-
 	defaults: {
 		// Defaults when NODE_ENV=development
 		development: {

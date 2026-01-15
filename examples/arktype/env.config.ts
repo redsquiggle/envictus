@@ -15,9 +15,7 @@ export default defineConfig({
 		"DEBUG?": "string",
 		LOG_LEVEL: "'debug' | 'info' | 'warn' | 'error' = 'info'",
 	}),
-
 	discriminator: "NODE_ENV",
-
 	defaults: {
 		development: {
 			...parseEnv(".env", { onMissing: "ignore" }),
