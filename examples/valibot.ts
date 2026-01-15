@@ -1,3 +1,9 @@
+/**
+ * Valibot example - requires explicit transformation pipelines for type coercion.
+ * - `v.pipe()` chains validators/transformers (e.g., unknown -> transform -> validate)
+ * - `v.unknown()` accepts any input, allowing subsequent transform/validation
+ * - Boolean transform needed because env vars are strings ("true"/"1" -> boolean)
+ */
 import * as v from "valibot";
 import { defineConfig } from "../src/index.js";
 

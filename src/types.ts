@@ -22,7 +22,11 @@ export type EnvDefaults<TSchema extends ObjectSchema> = Partial<InferInput<TSche
 
 /**
  * Extract the possible values from a discriminator field type.
- * Works with string literal unions and enums.
+ * Works with string literal unions (e.g., "dev" | "prod") and enums.
+ *
+ * Falls back to `string` when the discriminator field type is not a string
+ * literal union (e.g., when it's just `string` or a non-string type).
+ * This allows flexible keys while still providing type safety when possible.
  */
 type DiscriminatorValues<
 	TSchema extends ObjectSchema,
@@ -50,6 +54,12 @@ export type EnvictusConfig<TSchema extends ObjectSchema, TDiscriminator extends 
 	 * For example: { development: { PORT: 3000 }, production: { PORT: 8080 } }
 	 *
 	 * Keys are constrained to the possible values of the discriminator field.
+	 *
+	 * The `[TDiscriminator] extends [never]` check uses tuple wrapping to detect
+	 * if no discriminator was provided. Without the tuple wrapper, `T extends never`
+	 * is always false due to TypeScript's distributive conditional behavior over
+	 * `never` (the empty union). Wrapping in tuples (`[T] extends [never]`) prevents
+	 * distribution and correctly identifies when TDiscriminator defaults to `never`.
 	 */
 	defaults?: [TDiscriminator] extends [never]
 		? Record<string, EnvDefaults<TSchema>>

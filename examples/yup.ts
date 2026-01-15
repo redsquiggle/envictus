@@ -1,3 +1,9 @@
+/**
+ * Yup example - has built-in coercion for common types (string -> number, string -> boolean).
+ * - `.required()` marks field as mandatory; `.optional()` allows undefined
+ * - `.oneOf()` constrains to specific values (enum-like behavior)
+ * - `.default()` provides fallback value if field is undefined
+ */
 import * as yup from "yup";
 import { defineConfig } from "../src/index.js";
 

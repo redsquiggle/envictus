@@ -1,3 +1,9 @@
+/**
+ * ArkType example - uses string-based type expressions for concise schema definitions.
+ * - Inline defaults: `= 'value'` syntax (e.g., `"'dev' | 'prod' = 'dev'"`)
+ * - Optional fields: `"key?"` syntax (e.g., `"DEBUG?"`)
+ * - Built-in validators: `string.url`, `string.numeric`, etc.
+ */
 import { type } from "arktype";
 import { defineConfig } from "../src/index.js";
 

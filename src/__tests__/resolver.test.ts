@@ -543,4 +543,107 @@ describe("resolveEnv", () => {
 			expect(result.env.DEBUG).toBe("true");
 		});
 	});
+
+	describe("edge cases", () => {
+		it("succeeds when discriminator value has no matching defaults entry", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "staging", "production"]).default("development"),
+					PORT: z.coerce.number().default(3000),
+					DEBUG: z.coerce.boolean().default(false),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: {
+						PORT: 3000,
+						DEBUG: true,
+					},
+					production: {
+						PORT: 8080,
+						DEBUG: false,
+					},
+				},
+			});
+
+			// Set NODE_ENV to "staging" which has no defaults entry
+			process.env.NODE_ENV = "staging";
+
+			const result = await resolveEnv(config, true);
+
+			// Should succeed without errors, using schema defaults
+			expect(result.issues).toBeUndefined();
+			expect(result.env.NODE_ENV).toBe("staging");
+			expect(result.env.PORT).toBe("3000"); // schema default
+			expect(result.env.DEBUG).toBe("false"); // schema default
+		});
+
+		it("succeeds with empty defaults object", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "production"]).default("development"),
+					PORT: z.coerce.number().default(3000),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {},
+			});
+
+			process.env.NODE_ENV = "development";
+
+			const result = await resolveEnv(config, true);
+
+			// Should succeed without errors, using schema defaults
+			expect(result.issues).toBeUndefined();
+			expect(result.env.NODE_ENV).toBe("development");
+			expect(result.env.PORT).toBe("3000"); // schema default
+		});
+
+		it("JSON stringifies array values", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					ALLOWED_HOSTS: z.array(z.string()).default(["localhost", "127.0.0.1"]),
+				}),
+			});
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.ALLOWED_HOSTS).toBe('["localhost","127.0.0.1"]');
+		});
+
+		it("JSON stringifies nested object values", async () => {
+			const config = defineConfig({
+				schema: z
+					.object({
+						CONFIG: z
+							.object({
+								host: z.string(),
+								port: z.number(),
+							})
+							.default({ host: "localhost", port: 3000 }),
+					})
+					.passthrough(),
+			});
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.CONFIG).toBe('{"host":"localhost","port":3000}');
+		});
+
+		it("excludes null values from resolved env", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					OPTIONAL_VALUE: z.string().nullable().default(null),
+					REQUIRED_VALUE: z.string().default("present"),
+				}),
+			});
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			// null values should be excluded from the env object
+			expect(result.env.OPTIONAL_VALUE).toBeUndefined();
+			expect(result.env.REQUIRED_VALUE).toBe("present");
+		});
+	});
 });

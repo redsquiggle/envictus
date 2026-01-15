@@ -1,3 +1,9 @@
+/**
+ * Joi example - strict by default, requires explicit allowances for extra fields.
+ * - `.unknown()` on object allows extra env vars to pass through without errors
+ * - `.valid()` constrains to specific values (enum-like behavior)
+ * - Built-in validators: `.port()` (1-65535), `.uri()`, etc.
+ */
 import Joi from "joi";
 import { defineConfig } from "../src/index.js";
 

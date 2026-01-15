@@ -38,6 +38,10 @@ export type ParseEnvOptions = {
  *   local: parseEnv(".env.local", { onMissing: "ignore" }),
  * }
  * ```
+ *
+ * @param filePath - Path to the env file to parse
+ * @param options - Configuration options for handling missing files
+ * @returns Parsed key-value pairs from the env file, or empty object if file is missing and onMissing is not "error"
  */
 export function parseEnv(filePath: string, options: ParseEnvOptions = {}): Record<string, string> {
 	const { onMissing = "error" } = options;
@@ -54,9 +58,12 @@ export function parseEnv(filePath: string, options: ParseEnvOptions = {}): Recor
 					console.warn(`[envictus] Env file not found: ${filePath}`);
 					return {};
 				case "ignore":
+					if (process.env.DEBUG || process.env.ENVICTUS_DEBUG) {
+						console.debug(`[envictus] Env file not found (ignored): ${filePath}`);
+					}
 					return {};
 			}
 		}
-		throw err;
+		throw new Error(`Failed to read env file: ${filePath}`, { cause: err });
 	}
 }
