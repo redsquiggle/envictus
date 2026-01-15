@@ -1,6 +1,7 @@
 import { type } from "arktype";
 import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import * as yup from "yup";
 import { z } from "zod";
 import { defineConfig } from "../config.js";
 import { resolveEnv } from "../resolver.js";
@@ -370,6 +371,85 @@ describe("resolveEnv", () => {
 					production: {
 						PORT: "8080",
 						DEBUG: "false",
+					},
+				},
+			});
+
+			process.env.NODE_ENV = "development";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.DEBUG).toBe("true");
+		});
+	});
+
+	describe("yup schema support", () => {
+		it("resolves environment variables with yup schema", async () => {
+			const config = defineConfig({
+				schema: yup.object({
+					PORT: yup.number().required(),
+					HOST: yup.string().required(),
+				}),
+			});
+
+			process.env.PORT = "3000";
+			process.env.HOST = "localhost";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.HOST).toBe("localhost");
+		});
+
+		it("returns validation issues for invalid yup values", async () => {
+			const config = defineConfig({
+				schema: yup.object({
+					PORT: yup.number().min(1).max(65535).required(),
+				}),
+			});
+
+			process.env.PORT = "invalid";
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeDefined();
+			expect(result.issues?.length).toBeGreaterThan(0);
+		});
+
+		it("applies yup schema defaults", async () => {
+			const config = defineConfig({
+				schema: yup.object({
+					PORT: yup.number().default(3000),
+					DEBUG: yup.boolean().default(false),
+				}),
+			});
+
+			const result = await resolveEnv(config, true);
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.PORT).toBe("3000");
+			expect(result.env.DEBUG).toBe("false");
+		});
+
+		it("applies discriminator defaults with yup schema", async () => {
+			const config = defineConfig({
+				schema: yup.object({
+					NODE_ENV: yup.string().oneOf(["development", "production"]).default("development"),
+					PORT: yup.number().required(),
+					DEBUG: yup.boolean().optional(),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: {
+						PORT: 3000,
+						DEBUG: true,
+					},
+					production: {
+						PORT: 8080,
+						DEBUG: false,
 					},
 				},
 			});
