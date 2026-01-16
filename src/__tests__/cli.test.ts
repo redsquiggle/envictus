@@ -378,4 +378,149 @@ export default defineConfig({
 			expect(result.stderr).toContain("validation failed");
 		});
 	});
+
+	describe("package.json config", () => {
+		let pkgJsonDir: string;
+
+		beforeAll(() => {
+			// Create a fresh temp directory for package.json tests
+			const fixturesRoot = join(PROJECT_ROOT, ".test-fixtures");
+			mkdirSync(fixturesRoot, { recursive: true });
+			pkgJsonDir = mkdtempSync(join(fixturesRoot, "pkg-json-"));
+		});
+
+		afterAll(() => {
+			if (existsSync(pkgJsonDir)) {
+				rmSync(pkgJsonDir, { recursive: true });
+			}
+		});
+
+		it("uses configPath from package.json when --config is not provided", () => {
+			// Create config in a subdirectory
+			const configDir = join(pkgJsonDir, "config");
+			mkdirSync(configDir, { recursive: true });
+
+			const configPath = join(configDir, "my-env.config.ts");
+			writeFileSync(
+				configPath,
+				`
+import { z } from 'zod';
+import { defineConfig } from '${PROJECT_ROOT}/src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    TEST_VAR: z.string().default('from-pkg-json'),
+  }),
+});
+`,
+			);
+
+			// Create package.json with envictus config
+			writeFileSync(
+				join(pkgJsonDir, "package.json"),
+				JSON.stringify({
+					name: "test-package",
+					envictus: {
+						configPath: "./config/my-env.config.ts",
+					},
+				}),
+			);
+
+			const result = runCli(["--", "node", "-e", '"console.log(process.env.TEST_VAR)"'], {
+				cwd: pkgJsonDir,
+			});
+
+			expect(result.exitCode).toBe(0);
+			expect(result.stdout.trim()).toBe("from-pkg-json");
+		});
+
+		it("CLI --config flag overrides package.json configPath", () => {
+			// Create two different configs
+			const configFromPkg = join(pkgJsonDir, "pkg-config.ts");
+			writeFileSync(
+				configFromPkg,
+				`
+import { z } from 'zod';
+import { defineConfig } from '${PROJECT_ROOT}/src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    SOURCE: z.string().default('package-json'),
+  }),
+});
+`,
+			);
+
+			const configFromCli = join(pkgJsonDir, "cli-config.ts");
+			writeFileSync(
+				configFromCli,
+				`
+import { z } from 'zod';
+import { defineConfig } from '${PROJECT_ROOT}/src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    SOURCE: z.string().default('cli-flag'),
+  }),
+});
+`,
+			);
+
+			// Create package.json pointing to pkg-config.ts
+			writeFileSync(
+				join(pkgJsonDir, "package.json"),
+				JSON.stringify({
+					name: "test-package",
+					envictus: {
+						configPath: "./pkg-config.ts",
+					},
+				}),
+			);
+
+			// Run with explicit --config flag pointing to cli-config.ts
+			const result = runCli(["--config", configFromCli, "--", "node", "-e", '"console.log(process.env.SOURCE)"'], {
+				cwd: pkgJsonDir,
+			});
+
+			expect(result.exitCode).toBe(0);
+			expect(result.stdout.trim()).toBe("cli-flag");
+		});
+
+		it("falls back to default when package.json has no envictus config", () => {
+			const noEnvictusDir = mkdtempSync(join(PROJECT_ROOT, ".test-fixtures", "no-envictus-"));
+
+			// Create package.json without envictus field
+			writeFileSync(
+				join(noEnvictusDir, "package.json"),
+				JSON.stringify({
+					name: "test-package",
+				}),
+			);
+
+			// Create default env.config.ts
+			writeFileSync(
+				join(noEnvictusDir, "env.config.ts"),
+				`
+import { z } from 'zod';
+import { defineConfig } from '${PROJECT_ROOT}/src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    DEFAULT_TEST: z.string().default('default-config'),
+  }),
+});
+`,
+			);
+
+			const result = runCli(["--", "node", "-e", '"console.log(process.env.DEFAULT_TEST)"'], {
+				cwd: noEnvictusDir,
+			});
+
+			// Cleanup
+			rmSync(noEnvictusDir, { recursive: true });
+
+			expect(result.exitCode).toBe(0);
+			expect(result.stdout.trim()).toBe("default-config");
+		});
+	});
 });

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { program } from "./cli.js";
+import { program, resolveConfigPath } from "./cli.js";
 import { check } from "./commands/check.js";
 import { init } from "./commands/init.js";
 import { run } from "./commands/run.js";
@@ -19,8 +19,9 @@ program
 	.description("validate environment without running a command")
 	.action(async () => {
 		const opts = program.opts();
+		const configPath = await resolveConfigPath(opts.config);
 		const exitCode = await check({
-			config: opts.config,
+			config: configPath,
 			validate: opts.validate,
 			verbose: opts.verbose,
 		});
@@ -36,9 +37,10 @@ program.argument("[command...]", "command to run with resolved environment").act
 	}
 
 	const opts = program.opts();
+	const configPath = await resolveConfigPath(opts.config);
 	const exitCode = await run(
 		{
-			config: opts.config,
+			config: configPath,
 			validate: opts.validate,
 			verbose: opts.verbose,
 		},
