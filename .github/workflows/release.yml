@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -19,21 +20,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: "https://registry.npmjs.org"
 
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - run: pnpm install
       - run: pnpm check
       - run: pnpm test run
 
-      - id: publish
-        uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          provenance: true
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - if: steps.publish.outputs.type
+      - id: publish
+        run: npm publish --provenance --access public
+        continue-on-error: true
+
+      - if: steps.publish.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.publish.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
           generate_release_notes: true
