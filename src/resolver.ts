@@ -96,12 +96,21 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 	}
 
 	// Start with environment-specific defaults if available
-	let merged: Record<string, unknown> = {};
+	// Track keys explicitly set to undefined (to unset schema defaults)
+	const merged: Record<string, unknown> = {};
+	const explicitlyUnset = new Set<string>();
 	if (mode && defaults) {
 		// Cast to Record for runtime access - type safety is enforced at config definition time
 		const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
-		if (defaultsRecord[mode]) {
-			merged = { ...defaultsRecord[mode] };
+		const modeDefaults = defaultsRecord[mode];
+		if (modeDefaults) {
+			for (const [key, value] of Object.entries(modeDefaults)) {
+				if (value === undefined) {
+					explicitlyUnset.add(key);
+				} else {
+					merged[key] = value;
+				}
+			}
 		}
 	}
 
@@ -127,9 +136,10 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 		const validated = result.value as Record<string, unknown>;
 
 		// Convert all values to strings for environment variables
+		// Exclude keys that were explicitly set to undefined in environment defaults
 		const env: Record<string, string> = {};
 		for (const [key, value] of Object.entries(validated)) {
-			if (value !== undefined && value !== null) {
+			if (value !== undefined && value !== null && !explicitlyUnset.has(key)) {
 				env[key] = toEnvString(value);
 			}
 		}
@@ -138,9 +148,10 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 	}
 
 	// Without validation, just convert to strings
+	// Exclude keys that were explicitly set to undefined in environment defaults
 	const env: Record<string, string> = {};
 	for (const [key, value] of Object.entries(merged)) {
-		if (value !== undefined && value !== null) {
+		if (value !== undefined && value !== null && !explicitlyUnset.has(key)) {
 			env[key] = toEnvString(value);
 		}
 	}

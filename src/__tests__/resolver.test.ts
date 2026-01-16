@@ -617,5 +617,36 @@ describe("resolveEnv", () => {
 			expect(result.env.OPTIONAL_VALUE).toBeUndefined();
 			expect(result.env.REQUIRED_VALUE).toBe("present");
 		});
+
+		it("unsets a schema default by overriding with undefined in environment defaults", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "production"]).default("development"),
+					DEBUG: z.coerce.boolean().optional().default(true),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: {
+						// Keep DEBUG enabled in development (uses schema default)
+					},
+					production: {
+						// Explicitly unset DEBUG in production
+						DEBUG: undefined,
+					},
+				},
+			});
+
+			// In development, DEBUG should use the schema default (true)
+			process.env.NODE_ENV = "development";
+			const devResult = await resolveEnv(config, { validate: true });
+			expect(devResult.issues).toBeUndefined();
+			expect(devResult.env.DEBUG).toBe("true");
+
+			// In production, DEBUG should be unset (undefined overrides the schema default)
+			process.env.NODE_ENV = "production";
+			const prodResult = await resolveEnv(config, { validate: true });
+			expect(prodResult.issues).toBeUndefined();
+			expect(prodResult.env.DEBUG).toBeUndefined();
+		});
 	});
 });
