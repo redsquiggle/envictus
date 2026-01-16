@@ -333,6 +333,116 @@ export default defineConfig({
 		});
 	});
 
+	describe("printenv command", () => {
+		describe("examples/zod", () => {
+			const exampleDir = join(EXAMPLES_DIR, "zod");
+
+			it("prints environment in dotenv format by default", () => {
+				const result = runCli(["printenv"], { cwd: exampleDir, env: { NODE_ENV: "development" } });
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout).toContain("NODE_ENV=development");
+				expect(result.stdout).toContain("PORT=3000");
+				expect(result.stdout).toContain("DATABASE_URL=postgres://localhost:5432/dev");
+			});
+
+			it("prints environment in JSON format with --format json", () => {
+				const result = runCli(["printenv", "--format", "json"], { cwd: exampleDir, env: { NODE_ENV: "development" } });
+
+				expect(result.exitCode).toBe(0);
+				const parsed = JSON.parse(result.stdout);
+				expect(parsed.NODE_ENV).toBe("development");
+				expect(parsed.PORT).toBe("3000");
+				expect(parsed.DATABASE_URL).toBe("postgres://localhost:5432/dev");
+			});
+
+			it("prints environment in JSON format with -f json", () => {
+				const result = runCli(["printenv", "-f", "json"], { cwd: exampleDir, env: { NODE_ENV: "production" } });
+
+				expect(result.exitCode).toBe(0);
+				const parsed = JSON.parse(result.stdout);
+				expect(parsed.NODE_ENV).toBe("production");
+				expect(parsed.PORT).toBe("8080");
+			});
+
+			it("applies mode-specific defaults for production", () => {
+				const result = runCli(["printenv"], { cwd: exampleDir, env: { NODE_ENV: "production" } });
+
+				expect(result.exitCode).toBe(0);
+				expect(result.stdout).toContain("NODE_ENV=production");
+				expect(result.stdout).toContain("PORT=8080");
+			});
+		});
+
+		describe("examples/custom-discriminator", () => {
+			const exampleDir = join(EXAMPLES_DIR, "custom-discriminator");
+
+			it("prints with local mode defaults", () => {
+				const result = runCli(["printenv", "-f", "json"], { cwd: exampleDir });
+
+				expect(result.exitCode).toBe(0);
+				const parsed = JSON.parse(result.stdout);
+				expect(parsed.API_URL).toBe("http://localhost:4000");
+			});
+
+			it("prints with prod mode defaults", () => {
+				const result = runCli(["printenv", "-f", "json"], { cwd: exampleDir, env: { APP_ENV: "prod" } });
+
+				expect(result.exitCode).toBe(0);
+				const parsed = JSON.parse(result.stdout);
+				expect(parsed.API_URL).toBe("https://api.example.com");
+			});
+		});
+
+		it("skips validation with --no-validate", () => {
+			const configPath = createFixture(
+				"printenv-skip-validate.ts",
+				`
+import { z } from 'zod';
+import { defineConfig } from '../../src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    REQUIRED_VAR: z.string(),
+  }),
+});
+`,
+			);
+
+			const result = runCli(["printenv", "--config", configPath, "--no-validate", "-f", "json"]);
+
+			expect(result.exitCode).toBe(0);
+		});
+
+		it("fails when validation fails", () => {
+			const configPath = createFixture(
+				"printenv-fail-validate.ts",
+				`
+import { z } from 'zod';
+import { defineConfig } from '../../src/index.js';
+
+export default defineConfig({
+  schema: z.object({
+    REQUIRED_VAR: z.string(),
+  }),
+});
+`,
+			);
+
+			const result = runCli(["printenv", "--config", configPath]);
+
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toContain("validation failed");
+		});
+
+		it("fails when config file does not exist", () => {
+			const result = runCli(["printenv", "--config", "nonexistent.ts"]);
+
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toContain("Error");
+		});
+	});
+
 	describe("error handling", () => {
 		it("handles invalid TypeScript config", () => {
 			const configPath = createFixture("syntax-error.ts", "this is not valid typescript {{{");

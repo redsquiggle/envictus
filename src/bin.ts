@@ -3,6 +3,7 @@
 import { program, resolveConfigPath } from "./cli.js";
 import { check } from "./commands/check.js";
 import { init } from "./commands/init.js";
+import { printenv } from "./commands/printenv.js";
 import { run } from "./commands/run.js";
 
 // Init command
@@ -24,6 +25,24 @@ program
 			config: configPath,
 			validate: opts.validate,
 			verbose: opts.verbose,
+		});
+		process.exit(exitCode);
+	});
+
+// Printenv command
+program
+	.command("printenv")
+	.description("print resolved environment variables to stdout")
+	.option("-f, --format <format>", "output format (dotenv or json)", "dotenv")
+	.action(async (cmdOpts: { format: string }) => {
+		const opts = program.opts();
+		const configPath = await resolveConfigPath(opts.config);
+		const format = cmdOpts.format === "json" ? "json" : "dotenv";
+		const exitCode = await printenv({
+			config: configPath,
+			validate: opts.validate,
+			verbose: opts.verbose,
+			format,
 		});
 		process.exit(exitCode);
 	});
