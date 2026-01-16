@@ -1,6 +1,6 @@
 {
 	"name": "envictus",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "Type-safe environment variable management for Node.js",
 	"type": "module",
 	"repository": {
