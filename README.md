@@ -2,6 +2,10 @@
 
 Type-safe environment variable management for Node.js. Uses [Standard Schema](https://standardschema.dev/) for library-agnostic validation (Zod, Valibot, ArkType, Yup, Joi, and more) with discriminator-based environment defaults.
 
+## Documentation
+
+Full documentation at **[envictus.dev](https://envictus.dev)**.
+
 ## Quick Start
 
 ```bash
@@ -48,9 +52,41 @@ Run your command with validated environment:
 envictus -- npm run dev
 ```
 
-## Documentation
+## Programmatic Usage
 
-Full documentation at **[envictus.dev](https://envictus.dev)**.
+`defineConfig` returns a lazy `.env` property that resolves and caches validated environment variables on first access. Use top-level `await` to export a typed, ready-to-use env object:
+
+```typescript
+// env.config.ts
+import { defineConfig, parseEnv } from "envictus";
+
+const config = defineConfig({
+	schema: envSchema,
+	discriminator: "APP_ENV",
+	defaults: {
+		dev: {
+			DATABASE_URL: "postgres://localhost:5432/myapp_dev",
+			PUBLIC_URL: "https://app-dev.example.com",
+			LOG_LEVEL: "debug",
+		},
+		prod: {
+			PUBLIC_URL: "https://app.example.com",
+			LOG_LEVEL: "error",
+			...parseEnv(".env.prod", { onMissing: "ignore" }),
+		},
+	},
+});
+
+export default config;
+export const env = await config.env;
+```
+
+```typescript
+// app.ts
+import { env } from "./env.config";
+
+env.PUBLIC_URL; // fully typed, validated, and ready to use
+```
 
 ## License
 
