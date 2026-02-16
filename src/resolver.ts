@@ -43,36 +43,40 @@ function toEnvString(value: unknown): string {
 	return JSON.stringify(value);
 }
 
+/** Result of merging environment sources before validation */
+export interface MergeResult {
+	merged: Record<string, unknown>;
+	explicitlyUnset: Set<string>;
+}
+
 /**
- * Full resolution pipeline: merge all sources and validate
+ * Build merged environment from all sources (before validation)
  *
  * Resolution order (later sources override earlier):
- * 1. Schema defaults (from the validation library)
- * 2. Environment-specific defaults (from config.defaults[mode])
- * 3. process.env values
+ * 1. Environment-specific defaults (from config.defaults[mode])
+ * 2. process.env values
+ * 3. If mode is explicitly provided, set the discriminator key
  */
-export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
+export async function buildMergedEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	config: EnvictusConfig<TSchema, TDiscriminator>,
-	options: ResolveEnvOptions,
-): Promise<ResolvedEnv> {
+	options?: { mode?: string | undefined; verbose?: boolean | undefined },
+): Promise<MergeResult> {
 	const { schema, defaults } = config;
-	const { validate: shouldValidate, verbose = false } = options;
+	const { mode: explicitMode, verbose = false } = options ?? {};
 	const log = createLogger(verbose);
 
 	// Use NODE_ENV as the default discriminator when none is specified
 	const discriminator = config.discriminator ?? (DEFAULT_DISCRIMINATOR as TDiscriminator);
 
-	// Determine the current mode from process.env or schema default
-	let mode: string | undefined = process.env[discriminator as string];
+	// Determine the current mode: explicit param > process.env > schema default
+	let mode: string | undefined = explicitMode ?? process.env[discriminator as string];
 	if (mode) {
-		log.debug(`Using ${String(discriminator)} from environment: ${mode}`);
+		log.debug(`Using ${String(discriminator)}${explicitMode ? " from explicit mode" : " from environment"}: ${mode}`);
 	}
 
-	// If not in process.env, try to get the schema's default value for the discriminator
+	// If not resolved yet, try to get the schema's default value for the discriminator
 	if (!mode && defaults) {
-		// Try validating to get the default - some schemas support partial validation
 		const defaultResult = await schema["~standard"].validate({});
-		// If validation succeeds, extract the discriminator's default value
 		if (!defaultResult.issues && defaultResult.value) {
 			const defaultValue = (defaultResult.value as Record<string, unknown>)[discriminator as string];
 			if (typeof defaultValue === "string") {
@@ -80,7 +84,6 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 				log.debug(`Using schema default for discriminator '${String(discriminator)}': ${mode}`);
 			}
 		}
-		// Fallback: if we couldn't get the default from the schema, use the first key from defaults
 		if (!mode) {
 			const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
 			const availableModes = Object.keys(defaultsRecord);
@@ -100,7 +103,6 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 	const merged: Record<string, unknown> = {};
 	const explicitlyUnset = new Set<string>();
 	if (mode && defaults) {
-		// Cast to Record for runtime access - type safety is enforced at config definition time
 		const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
 		const modeDefaults = defaultsRecord[mode];
 		if (modeDefaults) {
@@ -120,6 +122,31 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 			merged[key] = value;
 		}
 	}
+
+	// If mode was explicitly provided, set the discriminator key
+	if (explicitMode) {
+		merged[discriminator as string] = explicitMode;
+	}
+
+	return { merged, explicitlyUnset };
+}
+
+/**
+ * Full resolution pipeline: merge all sources and validate
+ *
+ * Resolution order (later sources override earlier):
+ * 1. Schema defaults (from the validation library)
+ * 2. Environment-specific defaults (from config.defaults[mode])
+ * 3. process.env values
+ */
+export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
+	config: EnvictusConfig<TSchema, TDiscriminator>,
+	options: ResolveEnvOptions,
+): Promise<ResolvedEnv> {
+	const { schema } = config;
+	const { validate: shouldValidate, verbose = false } = options;
+
+	const { merged, explicitlyUnset } = await buildMergedEnv(config, { verbose });
 
 	// Validate if requested
 	if (shouldValidate) {

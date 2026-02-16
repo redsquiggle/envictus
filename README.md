@@ -157,7 +157,9 @@ schema: type({
 
 ### Discriminator
 
-The discriminator determines which defaults to use. **Defaults to `NODE_ENV`** when not specified:
+The discriminator determines which defaults to use. **Defaults to `NODE_ENV`** when not specified.
+
+> **Note:** `NODE_ENV` is a Node.js runtime concern — libraries like React and Express change behavior based on its value, and it's conventionally limited to `development`, `production`, and `test`. For selecting environment-specific defaults (local dev URLs, staging credentials, etc.), a dedicated variable like `APP_ENV` is a better fit. You can have `NODE_ENV=production` in both staging and production while using `APP_ENV` to distinguish between them.
 
 ```typescript
 export default defineConfig({

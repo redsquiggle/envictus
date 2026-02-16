@@ -1,6 +1,7 @@
 // Public API - what users import from 'envictus'
-export { defineConfig } from "./config.js";
+export { defineConfig, mergeDefaults } from "./config.js";
 export { type ParseEnvOptions, parseEnv } from "./env.js";
+export { getEnv } from "./getEnv.js";
 export type {
 	EnvictusConfig,
 	InferInput,
