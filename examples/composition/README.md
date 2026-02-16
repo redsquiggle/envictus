@@ -33,15 +33,16 @@ envictus -c examples/composition/client.env.config.ts -- next build
 
 ## Programmatic usage
 
+Every config returned by `defineConfig` has a lazy `.env` property — a cached promise that resolves and validates on first access:
+
 ```ts
-import { getEnv } from "envictus";
 import clientConfig from "./client.env.config.js";
 import serverConfig from "./server.env.config.js";
 
 // Each config resolves independently with full type safety
-const clientEnv = await getEnv(clientConfig);
+const clientEnv = await clientConfig.env;
 //    ^? { NEXT_PUBLIC_APP_ENV: ..., NEXT_PUBLIC_API_URL: ..., ... }
 
-const serverEnv = await getEnv(serverConfig);
+const serverEnv = await serverConfig.env;
 //    ^? { NEXT_PUBLIC_APP_ENV: ..., NEXT_PUBLIC_API_URL: ..., LOG_LEVEL: ..., DATABASE_URL: ..., ... }
 ```

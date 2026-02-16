@@ -1,3 +1,4 @@
+import { getEnv } from "./getEnv.js";
 import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
 
 /**
@@ -121,6 +122,15 @@ export function mergeDefaults(
  */
 export function defineConfig<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema> = never>(
 	config: EnvictusConfig<TSchema, TDiscriminator>,
-): EnvictusConfig<TSchema, TDiscriminator> {
-	return config;
+): EnvictusConfig<TSchema, TDiscriminator> & { readonly env: Promise<InferOutput<TSchema>> } {
+	let cached: Promise<InferOutput<TSchema>> | undefined;
+	return {
+		...config,
+		get env() {
+			if (!cached) {
+				cached = getEnv(config);
+			}
+			return cached;
+		},
+	};
 }

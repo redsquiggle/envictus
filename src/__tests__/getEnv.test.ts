@@ -196,6 +196,39 @@ describe("getEnv", () => {
 		expect(env.HOST).toBe("localhost");
 	});
 
+	describe("config.env", () => {
+		it("resolves env from the config directly", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "production"]).default("development"),
+					PORT: z.coerce.number(),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+					production: { PORT: 8080 },
+				},
+			});
+
+			process.env.NODE_ENV = "production";
+
+			const env = await config.env;
+
+			expect(env.NODE_ENV).toBe("production");
+			expect(env.PORT).toBe(8080);
+		});
+
+		it("returns the same promise on subsequent accesses", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					PORT: z.coerce.number().default(3000),
+				}),
+			});
+
+			expect(config.env).toBe(config.env);
+		});
+	});
+
 	it("explicit mode overrides process.env discriminator", async () => {
 		const config = defineConfig({
 			schema: z.object({
