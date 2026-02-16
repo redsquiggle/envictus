@@ -10,3 +10,4 @@ export type {
 	ResolvedEnv,
 	ValidationIssue,
 } from "./types.js";
+export { EnvValidationError, formatValidationIssues } from "./validation.js";

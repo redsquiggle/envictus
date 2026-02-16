@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { Command } from "commander";
 import { loadPackageJsonConfig } from "./package-config.js";
 import type { ValidationIssue } from "./types.js";
+import { formatValidationIssues } from "./validation.js";
 
 const require = createRequire(import.meta.url);
 const { version: VERSION } = require("../package.json") as { version: string };
@@ -42,12 +43,5 @@ export async function resolveConfigPath(cliConfigPath: string | undefined): Prom
  * Format and print validation issues
  */
 export function printValidationIssues(issues: readonly ValidationIssue[]): void {
-	console.error("\n✗ Environment validation failed:\n");
-
-	for (const issue of issues) {
-		const path = issue.path?.map((p) => (typeof p === "object" ? p.key : p)).join(".") || "(root)";
-		console.error(`  • ${path}: ${issue.message}`);
-	}
-
-	console.error("");
+	console.error(`\n✗ Environment validation failed:\n\n${formatValidationIssues(issues)}\n`);
 }

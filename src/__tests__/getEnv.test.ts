@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { defineConfig } from "../config.js";
 import { getEnv } from "../getEnv.js";
-import type { ValidationIssue } from "../types.js";
+import { EnvValidationError } from "../validation.js";
 
 describe("getEnv", () => {
 	const originalEnv = process.env;
@@ -89,7 +89,7 @@ describe("getEnv", () => {
 		expect(env.PORT).toBe(9999);
 	});
 
-	it("throws on validation failure with .issues", async () => {
+	it("throws EnvValidationError on validation failure", async () => {
 		const config = defineConfig({
 			schema: z.object({
 				PORT: z.coerce.number().min(1).max(65535),
@@ -102,11 +102,11 @@ describe("getEnv", () => {
 			await getEnv(config);
 			expect.unreachable("should have thrown");
 		} catch (error) {
-			expect(error).toBeInstanceOf(Error);
-			expect((error as Error).message).toBe("Environment validation failed");
-			const issues = (error as Error & { issues: readonly ValidationIssue[] }).issues;
-			expect(issues).toBeDefined();
-			expect(issues.length).toBeGreaterThan(0);
+			expect(error).toBeInstanceOf(EnvValidationError);
+			const validationError = error as EnvValidationError;
+			expect(validationError.message).toContain("Environment validation failed:");
+			expect(validationError.issues).toBeDefined();
+			expect(validationError.issues.length).toBeGreaterThan(0);
 		}
 	});
 
@@ -175,8 +175,11 @@ describe("getEnv", () => {
 			},
 		});
 
-		const env = await getEnv(config, "development");
-		expect(env.DEBUG).toBe(true);
+		const devEnv = await getEnv(config, "development");
+		expect(devEnv.DEBUG).toBe(true);
+
+		const prodEnv = await getEnv(config, "production");
+		expect(prodEnv.DEBUG).toBeUndefined();
 	});
 
 	it("works without discriminator or defaults", async () => {

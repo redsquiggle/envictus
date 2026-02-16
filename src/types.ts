@@ -89,7 +89,10 @@ export type EnvictusConfig<TSchema extends ObjectSchema, TDiscriminator extends 
 	 * })
 	 * ```
 	 */
-	onMissingDiscriminator?: (context: { discriminator: string; availableModes: string[] }) => string | undefined;
+	onMissingDiscriminator?: (context: {
+		discriminator: string;
+		availableModes: string[];
+	}) => ([TDiscriminator] extends [never] ? string : DiscriminatorValues<TSchema, TDiscriminator>) | undefined;
 };
 
 /**

@@ -1,34 +1,41 @@
 import { buildMergedEnv } from "./resolver.js";
 import type { EnvictusConfig, InferOutput, ObjectSchema, ValidationIssue } from "./types.js";
+import { EnvValidationError } from "./validation.js";
 
 /**
  * Resolve and validate environment variables programmatically.
  *
  * Resolution order (later sources override earlier):
- * 1. Schema defaults (from the validation library)
- * 2. Environment-specific defaults (from config.defaults[mode])
- * 3. process.env values
- * 4. If mode is provided, set the discriminator key to that value
- * 5. Validate against schema
+ * 1. Environment-specific defaults (from config.defaults[mode])
+ * 2. process.env values
+ * 3. If mode is explicitly provided, set the discriminator key
+ * 4. Validate against schema
  *
  * @param config - The envictus config (from defineConfig)
  * @param mode - Optional explicit discriminator value (e.g., "production")
  * @returns Validated, typed output from the schema
- * @throws Error with `.issues` property containing ValidationIssue[] on validation failure
+ * @throws {EnvValidationError} on validation failure, with `.issues` and a formatted message
  */
 export async function getEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
 	config: EnvictusConfig<TSchema, TDiscriminator>,
 	mode?: string,
 ): Promise<InferOutput<TSchema>> {
-	const { merged } = await buildMergedEnv(config, { mode });
+	const { merged, explicitlyUnset } = await buildMergedEnv(config, { mode });
 
 	const result = await config.schema["~standard"].validate(merged);
 
 	if (result.issues) {
-		const error = new Error("Environment validation failed");
-		(error as Error & { issues: readonly ValidationIssue[] }).issues = result.issues as readonly ValidationIssue[];
-		throw error;
+		throw new EnvValidationError(result.issues as readonly ValidationIssue[]);
 	}
 
-	return result.value as InferOutput<TSchema>;
+	const value = result.value as InferOutput<TSchema>;
+
+	// Strip keys that were explicitly unset in defaults
+	if (explicitlyUnset.size > 0) {
+		for (const key of explicitlyUnset) {
+			delete (value as Record<string, unknown>)[key];
+		}
+	}
+
+	return value;
 }
