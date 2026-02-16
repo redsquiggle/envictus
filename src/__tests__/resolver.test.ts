@@ -516,6 +516,133 @@ describe("resolveEnv", () => {
 		});
 	});
 
+	describe("onMissingDiscriminator", () => {
+		it("calls the callback when discriminator cannot be determined", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.string(),
+					PORT: z.coerce.number(),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+					production: { PORT: 8080 },
+				},
+				onMissingDiscriminator({ availableModes }) {
+					return availableModes[0];
+				},
+			});
+
+			delete process.env.NODE_ENV;
+
+			const result = await resolveEnv(config, { validate: false });
+
+			expect(result.env.PORT).toBe("3000");
+		});
+
+		it("skips mode defaults when callback returns undefined", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.string().optional(),
+					PORT: z.coerce.number().default(5000),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+					production: { PORT: 8080 },
+				},
+				onMissingDiscriminator() {
+					return undefined;
+				},
+			});
+
+			delete process.env.NODE_ENV;
+
+			const result = await resolveEnv(config, { validate: true });
+
+			expect(result.issues).toBeUndefined();
+			// Neither defaults applied — falls through to schema default
+			expect(result.env.PORT).toBe("5000");
+		});
+
+		it("propagates errors thrown in the callback", async () => {
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.string(),
+					PORT: z.coerce.number(),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+				},
+				onMissingDiscriminator({ discriminator }) {
+					throw new Error(`${discriminator} must be set explicitly in CI`);
+				},
+			});
+
+			delete process.env.NODE_ENV;
+
+			await expect(resolveEnv(config, { validate: true })).rejects.toThrow("NODE_ENV must be set explicitly in CI");
+		});
+
+		it("receives the correct discriminator and availableModes", async () => {
+			let captured: { discriminator: string; availableModes: string[] } | undefined;
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.string().optional(),
+					PORT: z.coerce.number().default(3000),
+				}),
+				discriminator: "APP_ENV",
+				defaults: {
+					local: { PORT: 3000 },
+					staging: { PORT: 4000 },
+					production: { PORT: 8080 },
+				},
+				onMissingDiscriminator(context) {
+					captured = context;
+					return "staging";
+				},
+			});
+
+			delete process.env.APP_ENV;
+
+			const result = await resolveEnv(config, { validate: true });
+
+			expect(captured).toEqual({
+				discriminator: "APP_ENV",
+				availableModes: ["local", "staging", "production"],
+			});
+			expect(result.env.PORT).toBe("4000");
+		});
+
+		it("is not called when discriminator is resolved from environment", async () => {
+			let called = false;
+
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "production"]).default("development"),
+					PORT: z.coerce.number(),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+					production: { PORT: 8080 },
+				},
+				onMissingDiscriminator() {
+					called = true;
+					return undefined;
+				},
+			});
+
+			process.env.NODE_ENV = "production";
+
+			await resolveEnv(config, { validate: true });
+
+			expect(called).toBe(false);
+		});
+	});
+
 	describe("edge cases", () => {
 		it("succeeds when discriminator value has no matching defaults entry", async () => {
 			const config = defineConfig({

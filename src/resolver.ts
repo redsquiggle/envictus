@@ -88,12 +88,19 @@ export async function buildMergedEnv<TSchema extends ObjectSchema, TDiscriminato
 			const defaultsRecord = defaults as Record<string, Record<string, unknown>>;
 			const availableModes = Object.keys(defaultsRecord);
 			if (availableModes.length > 0) {
-				mode = availableModes[0];
-				log.warn(
-					`Could not determine mode from '${String(discriminator)}'. ` +
-						`Falling back to first defaults key: '${mode}'. ` +
-						`Set ${String(discriminator)} in your environment to specify explicitly.`,
-				);
+				if (config.onMissingDiscriminator) {
+					mode = config.onMissingDiscriminator({
+						discriminator: discriminator as string,
+						availableModes,
+					});
+				} else {
+					mode = availableModes[0];
+					log.warn(
+						`Could not determine mode from '${String(discriminator)}'. ` +
+							`Falling back to first defaults key: '${mode}'. ` +
+							`Set ${String(discriminator)} in your environment to specify explicitly.`,
+					);
+				}
 			}
 		}
 	}

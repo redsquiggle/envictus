@@ -64,6 +64,32 @@ export type EnvictusConfig<TSchema extends ObjectSchema, TDiscriminator extends 
 	defaults?: [TDiscriminator] extends [never]
 		? Record<string, EnvDefaults<TSchema>>
 		: Partial<Record<DiscriminatorValues<TSchema, TDiscriminator>, EnvDefaults<TSchema>>>;
+
+	/**
+	 * Called when the discriminator value cannot be determined from the environment,
+	 * explicit mode, or schema defaults.
+	 *
+	 * By default, envictus warns and falls back to the first key in `defaults`.
+	 * Use this callback to customize that behavior — return a mode string to use,
+	 * return `undefined` to skip mode defaults entirely, or throw to abort.
+	 *
+	 * @example
+	 * ```ts
+	 * export default defineConfig({
+	 *   schema,
+	 *   discriminator: 'NODE_ENV',
+	 *   defaults: { development: { PORT: 3000 }, production: { PORT: 8080 } },
+	 *   onMissingDiscriminator({ discriminator, availableModes }) {
+	 *     if (process.env.CI) {
+	 *       throw new Error(`${discriminator} must be set explicitly in CI`);
+	 *     }
+	 *     // Silence the warning locally; fall back to first available mode
+	 *     return availableModes[0];
+	 *   },
+	 * })
+	 * ```
+	 */
+	onMissingDiscriminator?: (context: { discriminator: string; availableModes: string[] }) => string | undefined;
 };
 
 /**
