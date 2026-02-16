@@ -3,6 +3,7 @@ import { defineConfig } from "astro/config";
 import { remarkIncludeExamples } from "./remark-include-examples.mjs";
 
 export default defineConfig({
+	site: "https://envictus.dev",
 	markdown: {
 		remarkPlugins: [remarkIncludeExamples],
 	},

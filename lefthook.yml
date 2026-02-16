@@ -10,10 +10,6 @@ pre-commit:
     knip:
       run: pnpm knip --fix
       stage_fixed: true
-    readme:
-      glob: "{content,examples}/**/*.{md,ts}"
-      run: pnpm build:readme
-      stage_fixed: true
     test:
       run: pnpm test run
 
