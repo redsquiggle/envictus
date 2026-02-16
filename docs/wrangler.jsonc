@@ -1,0 +1,9 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "envictus-docs",
+	"compatibility_date": "2025-09-02",
+	"routes": [
+		{ "pattern": "envictus.dev", "custom_domain": true },
+		{ "pattern": "www.envictus.dev", "custom_domain": true }
+	]
+}
