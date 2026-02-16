@@ -1,4 +1,9 @@
-## Resolution Order
+---
+title: Resolution Order
+slug: resolution-order
+sidebar:
+  order: 5
+---
 
 Environment variables are resolved in this order (lowest to highest priority):
 

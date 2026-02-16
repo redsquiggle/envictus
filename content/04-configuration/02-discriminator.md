@@ -1,4 +1,9 @@
-### Discriminator
+---
+title: Discriminator
+slug: configuration/discriminator
+sidebar:
+  order: 2
+---
 
 The discriminator determines which defaults to use. **Defaults to `NODE_ENV`** when not specified.
 

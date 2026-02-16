@@ -1,4 +1,9 @@
-## Printing Environment Variables
+---
+title: Printing Environment Variables
+slug: printenv
+sidebar:
+  order: 7
+---
 
 Use `envictus printenv` to output the resolved environment variables to stdout. This is useful for piping to other tools:
 

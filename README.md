@@ -145,6 +145,8 @@ envictus -- node dist/server.js
 
 ## Configuration
 
+Configuration is defined in an `env.config.ts` file using `defineConfig()`. It consists of a schema, an optional discriminator, and environment-specific defaults.
+
 ### Schema
 
 Define your environment variables using any Standard Schema-compatible library:
@@ -259,6 +261,8 @@ Environment variables are resolved in this order (lowest to highest priority):
 3. `process.env` (actual environment variables)
 
 ## Examples
+
+Real-world configuration examples using popular schema libraries:
 
 ### ArkType
 

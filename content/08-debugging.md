@@ -1,4 +1,9 @@
-## Debugging
+---
+title: Debugging
+slug: debugging
+sidebar:
+  order: 8
+---
 
 Use the `--verbose` (or `-v`) flag to enable debug output:
 

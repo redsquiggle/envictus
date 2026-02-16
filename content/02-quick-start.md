@@ -1,4 +1,9 @@
-## Quick Start
+---
+title: Quick Start
+slug: quick-start
+sidebar:
+  order: 2
+---
 
 Create an `env.config.ts` config file:
 

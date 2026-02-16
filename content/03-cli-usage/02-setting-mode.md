@@ -1,4 +1,9 @@
-### Setting the Environment Mode
+---
+title: Setting the Environment Mode
+slug: cli-usage/setting-mode
+sidebar:
+  order: 2
+---
 
 The discriminator value (e.g., `NODE_ENV`) is read from the environment:
 

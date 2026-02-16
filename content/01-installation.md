@@ -1,4 +1,9 @@
-## Installation
+---
+title: Installation
+slug: installation
+sidebar:
+  order: 1
+---
 
 ```bash
 npm install envictus zod

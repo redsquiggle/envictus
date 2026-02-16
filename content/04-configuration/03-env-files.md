@@ -1,4 +1,9 @@
-### Loading Defaults from .env Files
+---
+title: Loading Defaults from .env Files
+slug: configuration/env-files
+sidebar:
+  order: 3
+---
 
 Use `parseEnv()` to load defaults from .env files:
 

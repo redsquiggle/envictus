@@ -1,4 +1,9 @@
-## CLI Usage
+---
+title: CLI Usage
+slug: cli-usage
+sidebar:
+  order: 3
+---
 
 ```bash
 # Run a command with validated env

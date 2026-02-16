@@ -1,4 +1,9 @@
-### Config Path in package.json
+---
+title: Config Path in package.json
+slug: cli-usage/config-path
+sidebar:
+  order: 1
+---
 
 Instead of passing `--config` every time, you can set the config path in your `package.json`:
 

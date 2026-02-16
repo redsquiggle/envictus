@@ -55,6 +55,9 @@
 			"bracketSameLine": false
 		}
 	},
+	"files": {
+		"includes": ["**", "!docs"]
+	},
 	"json": {
 		"formatter": {
 			"trailingCommas": "none"

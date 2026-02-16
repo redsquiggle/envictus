@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import remarkFrontmatter from "remark-frontmatter";
 import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import remarkToc from "remark-toc";
@@ -11,10 +12,44 @@ const OUTPUT_FILE = new URL("../README.md", import.meta.url).pathname;
 const GENERATED_COMMENT = "<!-- This file is generated from content/. Do not edit directly. -->\n\n";
 
 /**
+ * Parse a markdown file with frontmatter support.
+ * Extracts `title` from YAML frontmatter, removes the yaml node,
+ * and prepends a generated heading at the given depth.
+ */
+function parseFile(filePath, headingDepth) {
+	const content = readFileSync(filePath, "utf-8");
+	const tree = unified().use(remarkParse).use(remarkFrontmatter, ["yaml"]).parse(content);
+
+	let title = null;
+	const children = tree.children.filter((node) => {
+		if (node.type === "yaml") {
+			const match = node.value.match(/^title:\s*(.+)$/m);
+			if (match) {
+				title = match[1].trim();
+			}
+			return false;
+		}
+		return true;
+	});
+
+	if (title) {
+		children.unshift({
+			type: "heading",
+			depth: headingDepth,
+			children: [{ type: "text", value: title }],
+		});
+	}
+
+	return children;
+}
+
+/**
  * Recursively collect markdown AST children from content/ directory.
  * At each level: process index.md first, then numerically-sorted entries.
+ * Index files get headings at `depth`, non-index files at `depth + 1`,
+ * subdirectories recurse with `depth + 1`.
  */
-function collectNodes(dir) {
+function collectNodes(dir, depth) {
 	const entries = readdirSync(dir);
 
 	const indexFile = entries.find((e) => e === "index.md");
@@ -23,7 +58,7 @@ function collectNodes(dir) {
 	const nodes = [];
 
 	if (indexFile) {
-		nodes.push(...parseFile(join(dir, indexFile)));
+		nodes.push(...parseFile(join(dir, indexFile), depth));
 	}
 
 	for (const entry of rest) {
@@ -31,19 +66,13 @@ function collectNodes(dir) {
 		const stat = statSync(fullPath);
 
 		if (stat.isDirectory()) {
-			nodes.push(...collectNodes(fullPath));
+			nodes.push(...collectNodes(fullPath, depth + 1));
 		} else if (entry.endsWith(".md")) {
-			nodes.push(...parseFile(fullPath));
+			nodes.push(...parseFile(fullPath, depth + 1));
 		}
 	}
 
 	return nodes;
-}
-
-function parseFile(filePath) {
-	const content = readFileSync(filePath, "utf-8");
-	const tree = unified().use(remarkParse).parse(content);
-	return tree.children;
 }
 
 /**
@@ -111,7 +140,17 @@ function generateExampleNodes() {
 	return nodes;
 }
 
-const children = collectNodes(CONTENT_DIR);
+const children = collectNodes(CONTENT_DIR, 1);
+
+// Inject "Table of Contents" heading before the first h2
+const firstH2Idx = children.findIndex((n) => n.type === "heading" && n.depth === 2);
+if (firstH2Idx !== -1) {
+	children.splice(firstH2Idx, 0, {
+		type: "heading",
+		depth: 2,
+		children: [{ type: "text", value: "Table of Contents" }],
+	});
+}
 
 // Replace <!-- include-examples --> with generated content
 const exampleNodes = generateExampleNodes();

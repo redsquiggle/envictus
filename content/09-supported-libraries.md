@@ -1,4 +1,9 @@
-## Supported Schema Libraries
+---
+title: Supported Schema Libraries
+slug: supported-libraries
+sidebar:
+  order: 9
+---
 
 Any library implementing the [Standard Schema](https://standardschema.dev/) spec:
 

@@ -1,4 +1,9 @@
-### Schema
+---
+title: Schema
+slug: configuration/schema
+sidebar:
+  order: 1
+---
 
 Define your environment variables using any Standard Schema-compatible library:
 
