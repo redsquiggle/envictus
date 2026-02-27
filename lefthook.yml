@@ -13,6 +13,17 @@ pre-commit:
     test:
       run: pnpm test run
 
+pre-push:
+  commands:
+    version-check:
+      run: |
+        local_version=$(node -p "require('./package.json').version")
+        published_version=$(npm view envictus version 2>/dev/null || echo "0.0.0")
+        if [ "$local_version" = "$published_version" ]; then
+          echo "Error: version $local_version is already published. Bump the version in package.json before pushing."
+          exit 1
+        fi
+
 commit-msg:
   commands:
     commitlint:
