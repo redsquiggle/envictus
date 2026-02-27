@@ -50,15 +50,37 @@ export interface MergeResult {
 }
 
 /**
+ * Minimal group config shape used at runtime for resolution.
+ * Avoids generic variance issues with `EnvictusConfig<ObjectSchema, any>`.
+ */
+interface GroupConfigRuntime {
+	schema: ObjectSchema;
+	discriminator?: string | undefined;
+	defaults?: Record<string, Record<string, unknown>> | undefined;
+	onMissingDiscriminator?:
+		| ((context: {
+				discriminator: string;
+				availableModes: string[];
+				parent?: { discriminator: string; mode: string | undefined };
+		  }) => string | undefined)
+		| undefined;
+}
+
+/**
  * Build merged environment from all sources (before validation)
  *
  * Resolution order (later sources override earlier):
  * 1. Environment-specific defaults (from config.defaults[mode])
- * 2. process.env values
- * 3. If mode is explicitly provided, set the discriminator key
+ * 2. Group defaults (from config.groups[name].defaults[groupMode])
+ * 3. process.env values
+ * 4. If mode is explicitly provided, set the discriminator key
  */
-export async function buildMergedEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
-	config: EnvictusConfig<TSchema, TDiscriminator>,
+export async function buildMergedEnv<
+	TSchema extends ObjectSchema,
+	TDiscriminator extends (keyof InferOutput<TSchema> & string) | (string & {}),
+	TGroups extends Record<string, { schema: ObjectSchema }> = Record<string, never>,
+>(
+	config: EnvictusConfig<TSchema, TDiscriminator, TGroups>,
 	options?: { mode?: string | undefined; verbose?: boolean | undefined },
 ): Promise<MergeResult> {
 	const { schema, defaults } = config;
@@ -123,6 +145,49 @@ export async function buildMergedEnv<TSchema extends ObjectSchema, TDiscriminato
 		}
 	}
 
+	// Process groups: resolve each group's mode and apply its defaults
+	const groups = config.groups as Record<string, GroupConfigRuntime> | undefined;
+	if (groups) {
+		const rootDiscriminator = discriminator as string;
+		for (const [name, group] of Object.entries(groups)) {
+			const groupDiscriminator = group.discriminator ?? DEFAULT_DISCRIMINATOR;
+			let groupMode: string | undefined = process.env[groupDiscriminator];
+
+			if (groupMode) {
+				log.debug(`Group '${name}': using ${groupDiscriminator} from environment: ${groupMode}`);
+			} else if (group.defaults) {
+				const availableModes = Object.keys(group.defaults);
+				if (availableModes.length > 0) {
+					if (group.onMissingDiscriminator) {
+						groupMode = group.onMissingDiscriminator({
+							discriminator: groupDiscriminator,
+							availableModes,
+							parent: { discriminator: rootDiscriminator, mode },
+						});
+					} else {
+						// No callback → cascade to root mode
+						groupMode = mode;
+						log.debug(`Group '${name}': falling back to root mode: ${groupMode}`);
+					}
+				}
+			}
+
+			if (groupMode && group.defaults) {
+				const groupModeDefaults = group.defaults[groupMode];
+				if (groupModeDefaults) {
+					for (const [key, value] of Object.entries(groupModeDefaults)) {
+						if (value === undefined) {
+							explicitlyUnset.add(key);
+						} else {
+							merged[key] = value;
+							explicitlyUnset.delete(key);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// Override with process.env values (only for keys that are set)
 	for (const [key, value] of Object.entries(process.env)) {
 		if (value !== undefined) {
@@ -146,10 +211,11 @@ export async function buildMergedEnv<TSchema extends ObjectSchema, TDiscriminato
  * 2. Environment-specific defaults (from config.defaults[mode])
  * 3. process.env values
  */
-export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema>>(
-	config: EnvictusConfig<TSchema, TDiscriminator>,
-	options: ResolveEnvOptions,
-): Promise<ResolvedEnv> {
+export async function resolveEnv<
+	TSchema extends ObjectSchema,
+	TDiscriminator extends (keyof InferOutput<TSchema> & string) | (string & {}),
+	TGroups extends Record<string, { schema: ObjectSchema }> = Record<string, never>,
+>(config: EnvictusConfig<TSchema, TDiscriminator, TGroups>, options: ResolveEnvOptions): Promise<ResolvedEnv> {
 	const { schema } = config;
 	const { validate: shouldValidate, verbose = false } = options;
 
@@ -157,24 +223,53 @@ export async function resolveEnv<TSchema extends ObjectSchema, TDiscriminator ex
 
 	// Validate if requested
 	if (shouldValidate) {
-		const result = await schema["~standard"].validate(merged);
+		const allIssues: ValidationIssue[] = [];
 
-		if (result.issues) {
-			return {
-				env: {},
-				issues: result.issues as readonly ValidationIssue[],
-			};
+		// Validate root schema
+		const rootResult = await schema["~standard"].validate(merged);
+		let rootValidated: Record<string, unknown> = {};
+		if (rootResult.issues) {
+			allIssues.push(...(rootResult.issues as ValidationIssue[]));
+		} else {
+			rootValidated = rootResult.value as Record<string, unknown>;
 		}
 
-		// Use the validated/transformed output
-		const validated = result.value as Record<string, unknown>;
+		// Validate each group schema independently
+		const groups = config.groups as Record<string, GroupConfigRuntime> | undefined;
+		const groupResults = new Map<string, Record<string, unknown>>();
+		if (groups) {
+			for (const [name, group] of Object.entries(groups)) {
+				const groupResult = await group.schema["~standard"].validate(merged);
+				if (groupResult.issues) {
+					allIssues.push(...(groupResult.issues as ValidationIssue[]));
+				} else if (groupResult.value) {
+					groupResults.set(name, groupResult.value as Record<string, unknown>);
+				}
+			}
+		}
+
+		if (allIssues.length > 0) {
+			return {
+				env: {},
+				issues: allIssues,
+			};
+		}
 
 		// Convert all values to strings for environment variables
 		// Exclude keys that were explicitly set to undefined in environment defaults
 		const env: Record<string, string> = {};
-		for (const [key, value] of Object.entries(validated)) {
+		for (const [key, value] of Object.entries(rootValidated)) {
 			if (value !== undefined && value !== null && !explicitlyUnset.has(key)) {
 				env[key] = toEnvString(value);
+			}
+		}
+
+		// Flatten group validated outputs into the same env
+		for (const groupValidated of groupResults.values()) {
+			for (const [key, value] of Object.entries(groupValidated)) {
+				if (value !== undefined && value !== null && !explicitlyUnset.has(key)) {
+					env[key] = toEnvString(value);
+				}
 			}
 		}
 

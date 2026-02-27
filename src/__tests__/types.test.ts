@@ -36,16 +36,87 @@ describe("type safety", () => {
 			});
 		});
 
-		it("requires discriminator to be a key of the schema", () => {
-			defineConfig({
+		it("accepts discriminator not in the schema (for groups)", () => {
+			const config = defineConfig({
 				schema: z.object({
-					NODE_ENV: z.enum(["development", "production"]).default("development"),
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test" },
+				},
+			});
+
+			expectTypeOf(config).toExtend<object>();
+		});
+	});
+
+	describe("groups type safety", () => {
+		it("config.env includes typed group namespaces", () => {
+			const stripeGroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+					STRIPE_WEBHOOK_SECRET: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test", STRIPE_WEBHOOK_SECRET: "whsec_test" },
+				},
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
 					PORT: z.coerce.number(),
 				}),
-				// @ts-expect-error - 'INVALID_KEY' is not a key in the schema
-				discriminator: "INVALID_KEY",
-				defaults: {},
+				discriminator: "APP_ENV",
+				defaults: {
+					development: { PORT: 3000 },
+				},
+				groups: { stripe: stripeGroup },
 			});
+
+			type Env = Awaited<typeof config.env>;
+			// Root fields
+			expectTypeOf<Env["PORT"]>().toEqualTypeOf<number>();
+			// Group namespace
+			expectTypeOf<Env["stripe"]>().toEqualTypeOf<{
+				STRIPE_SECRET_KEY: string;
+				STRIPE_WEBHOOK_SECRET: string;
+			}>();
+		});
+
+		it("groups with defineConfig work as group values", () => {
+			const authGroup = defineConfig({
+				schema: z.object({
+					AUTH_TOKEN: z.string(),
+				}),
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					NODE_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "NODE_ENV",
+				defaults: {},
+				groups: { auth: authGroup },
+			});
+
+			type Env = Awaited<typeof config.env>;
+			expectTypeOf<Env["auth"]>().toEqualTypeOf<{ AUTH_TOKEN: string }>();
+		});
+
+		it("config without groups has no group namespaces in env type", () => {
+			const config = defineConfig({
+				schema: z.object({
+					PORT: z.coerce.number(),
+				}),
+			});
+
+			type Env = Awaited<typeof config.env>;
+			expectTypeOf<Env["PORT"]>().toEqualTypeOf<number>();
+			// No group keys should exist — Env should only have PORT
+			expectTypeOf(config).toExtend<object>();
 		});
 	});
 

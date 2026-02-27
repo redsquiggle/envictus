@@ -8,7 +8,7 @@ import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
  */
 export async function loadConfig<
 	TSchema extends ObjectSchema,
-	TDiscriminator extends keyof InferOutput<TSchema> = never,
+	TDiscriminator extends (keyof InferOutput<TSchema> & string) | (string & {}) = never,
 >(configPath: string): Promise<EnvictusConfig<TSchema, TDiscriminator>> {
 	const jiti = createJiti(import.meta.url, {
 		interopDefault: true,

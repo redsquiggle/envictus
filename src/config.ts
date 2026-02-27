@@ -1,5 +1,5 @@
 import { getEnv } from "./getEnv.js";
-import type { EnvictusConfig, InferOutput, ObjectSchema } from "./types.js";
+import type { EnvictusConfig, GroupEnvOutput, InferOutput, ObjectSchema } from "./types.js";
 
 /**
  * Merge result type that preserves property types from both sources per key.
@@ -120,10 +120,16 @@ export function mergeDefaults(
  * })
  * ```
  */
-export function defineConfig<TSchema extends ObjectSchema, TDiscriminator extends keyof InferOutput<TSchema> = never>(
-	config: EnvictusConfig<TSchema, TDiscriminator>,
-): EnvictusConfig<TSchema, TDiscriminator> & { readonly env: Promise<InferOutput<TSchema>> } {
-	let cached: Promise<InferOutput<TSchema>> | undefined;
+export function defineConfig<
+	TSchema extends ObjectSchema,
+	TDiscriminator extends (keyof InferOutput<TSchema> & string) | (string & {}) = never,
+	TGroups extends Record<string, { schema: ObjectSchema }> = Record<string, never>,
+>(
+	config: EnvictusConfig<TSchema, TDiscriminator, TGroups>,
+): EnvictusConfig<TSchema, TDiscriminator, TGroups> & {
+	readonly env: Promise<InferOutput<TSchema> & GroupEnvOutput<TGroups>>;
+} {
+	let cached: Promise<InferOutput<TSchema> & GroupEnvOutput<TGroups>> | undefined;
 	return {
 		...config,
 		get env() {
