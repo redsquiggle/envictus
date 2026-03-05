@@ -495,6 +495,178 @@ describe("groups", () => {
 		});
 	});
 
+	describe("recursive (nested) groups", () => {
+		it("resolves defaults from nested subgroups", async () => {
+			const paymentGroup = defineConfig({
+				schema: z.object({
+					PAYMENT_KEY: z.string(),
+				}),
+				discriminator: "PAYMENT_ENV",
+				defaults: {
+					development: { PAYMENT_KEY: "pay_test_123" },
+					production: { PAYMENT_KEY: "pay_live_456" },
+				},
+			});
+
+			const stripeWithSubgroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test_123" },
+					production: { STRIPE_SECRET_KEY: "sk_live_456" },
+				},
+				groups: { payment: paymentGroup },
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "APP_ENV",
+				defaults: { development: {}, production: {} },
+				groups: { stripe: stripeWithSubgroup },
+			});
+
+			process.env.APP_ENV = "development";
+
+			const result = await resolveEnv(config, { validate: true });
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.STRIPE_SECRET_KEY).toBe("sk_test_123");
+			expect(result.env.PAYMENT_KEY).toBe("pay_test_123");
+		});
+
+		it("subgroup discriminator overrides parent cascade", async () => {
+			const paymentGroup = defineConfig({
+				schema: z.object({
+					PAYMENT_KEY: z.string(),
+				}),
+				discriminator: "PAYMENT_ENV",
+				defaults: {
+					development: { PAYMENT_KEY: "pay_test_123" },
+					production: { PAYMENT_KEY: "pay_live_456" },
+				},
+			});
+
+			const stripeWithSubgroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test_123" },
+					production: { STRIPE_SECRET_KEY: "sk_live_456" },
+				},
+				groups: { payment: paymentGroup },
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "APP_ENV",
+				defaults: { development: {}, production: {} },
+				groups: { stripe: stripeWithSubgroup },
+			});
+
+			process.env.APP_ENV = "development";
+			process.env.STRIPE_ENV = "development";
+			process.env.PAYMENT_ENV = "production"; // subgroup uses its own discriminator
+
+			const result = await resolveEnv(config, { validate: true });
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.STRIPE_SECRET_KEY).toBe("sk_test_123");
+			expect(result.env.PAYMENT_KEY).toBe("pay_live_456");
+		});
+
+		it("getEnv returns deeply nested group namespaces", async () => {
+			const paymentGroup = defineConfig({
+				schema: z.object({
+					PAYMENT_KEY: z.string(),
+				}),
+				discriminator: "PAYMENT_ENV",
+				defaults: {
+					development: { PAYMENT_KEY: "pay_test_123" },
+				},
+			});
+
+			const stripeWithSubgroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test_123" },
+				},
+				groups: { payment: paymentGroup },
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "APP_ENV",
+				defaults: { development: {} },
+				groups: { stripe: stripeWithSubgroup },
+			});
+
+			process.env.APP_ENV = "development";
+
+			const env = await getEnv(config);
+
+			expect(env.stripe.STRIPE_SECRET_KEY).toBe("sk_test_123");
+			// @ts-expect-error - nested namespace access (types.test.ts covers the type shape)
+			expect(env.stripe.payment.PAYMENT_KEY).toBe("pay_test_123");
+		});
+
+		it("subgroup cascades to parent group mode when no discriminator set", async () => {
+			const paymentGroup = defineConfig({
+				schema: z.object({
+					PAYMENT_KEY: z.string(),
+				}),
+				discriminator: "PAYMENT_ENV",
+				defaults: {
+					development: { PAYMENT_KEY: "pay_test" },
+					production: { PAYMENT_KEY: "pay_live" },
+				},
+			});
+
+			const stripeWithSubgroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				discriminator: "STRIPE_ENV",
+				defaults: {
+					development: { STRIPE_SECRET_KEY: "sk_test" },
+					production: { STRIPE_SECRET_KEY: "sk_live" },
+				},
+				groups: { payment: paymentGroup },
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "APP_ENV",
+				defaults: { development: {}, production: {} },
+				groups: { stripe: stripeWithSubgroup },
+			});
+
+			process.env.APP_ENV = "production";
+			process.env.STRIPE_ENV = "production";
+			// PAYMENT_ENV not set → cascades to STRIPE_ENV mode: "production"
+
+			const result = await resolveEnv(config, { validate: true });
+
+			expect(result.issues).toBeUndefined();
+			expect(result.env.STRIPE_SECRET_KEY).toBe("sk_live");
+			expect(result.env.PAYMENT_KEY).toBe("pay_live");
+		});
+	});
+
 	describe("config.env with groups", () => {
 		it("resolves env with group namespaces via config.env", async () => {
 			const config = defineConfig({

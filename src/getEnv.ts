@@ -3,6 +3,33 @@ import type { EnvictusConfig, GroupEnvOutput, InferOutput, ObjectSchema, Validat
 import { EnvValidationError } from "./validation.js";
 
 /**
+ * Validate a group's schema and recursively process its subgroups,
+ * returning the validated output with subgroup outputs nested under their keys.
+ */
+async function resolveGroupValue(
+	group: { schema: ObjectSchema; groups?: Record<string, { schema: ObjectSchema }> | undefined },
+	merged: Record<string, unknown>,
+	explicitlyUnset: Set<string>,
+): Promise<Record<string, unknown>> {
+	const result = await group.schema["~standard"].validate(merged);
+	if (result.issues) {
+		throw new EnvValidationError(result.issues as readonly ValidationIssue[]);
+	}
+	const value = result.value as Record<string, unknown>;
+	if (explicitlyUnset.size > 0) {
+		for (const key of explicitlyUnset) {
+			delete value[key];
+		}
+	}
+	if (group.groups) {
+		for (const [name, subGroup] of Object.entries(group.groups)) {
+			value[name] = await resolveGroupValue(subGroup, merged, explicitlyUnset);
+		}
+	}
+	return value;
+}
+
+/**
  * Resolve and validate environment variables programmatically.
  *
  * Resolution order (later sources override earlier):
@@ -42,21 +69,13 @@ export async function getEnv<
 		}
 	}
 
-	// Process groups — validate each group schema and nest under group key
-	const groups = config.groups as Record<string, { schema: ObjectSchema }> | undefined;
+	// Process groups — validate each group schema and nest under group key (recursively)
+	const groups = config.groups as
+		| Record<string, { schema: ObjectSchema; groups?: Record<string, { schema: ObjectSchema }> }>
+		| undefined;
 	if (groups) {
 		for (const [name, group] of Object.entries(groups)) {
-			const groupResult = await group.schema["~standard"].validate(merged);
-			if (groupResult.issues) {
-				throw new EnvValidationError(groupResult.issues as readonly ValidationIssue[]);
-			}
-			const groupValue = groupResult.value as Record<string, unknown>;
-			if (explicitlyUnset.size > 0) {
-				for (const key of explicitlyUnset) {
-					delete groupValue[key];
-				}
-			}
-			value[name] = groupValue;
+			value[name] = await resolveGroupValue(group, merged, explicitlyUnset);
 		}
 	}
 

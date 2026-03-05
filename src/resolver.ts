@@ -57,6 +57,7 @@ interface GroupConfigRuntime {
 	schema: ObjectSchema;
 	discriminator?: string | undefined;
 	defaults?: Record<string, Record<string, unknown>> | undefined;
+	groups?: Record<string, GroupConfigRuntime> | undefined;
 	onMissingDiscriminator?:
 		| ((context: {
 				discriminator: string;
@@ -64,6 +65,86 @@ interface GroupConfigRuntime {
 				parent?: { discriminator: string; mode: string | undefined };
 		  }) => string | undefined)
 		| undefined;
+}
+
+/**
+ * Recursively apply group defaults into the merged environment.
+ * Each group resolves its own mode, then recurses into its subgroups.
+ * The parent's discriminator/mode is passed down as a fallback.
+ */
+async function applyGroupDefaults(
+	groups: Record<string, GroupConfigRuntime>,
+	merged: Record<string, unknown>,
+	explicitlyUnset: Set<string>,
+	parentDiscriminator: string,
+	parentMode: string | undefined,
+	log: ReturnType<typeof createLogger>,
+): Promise<void> {
+	for (const [name, group] of Object.entries(groups)) {
+		const groupDiscriminator = group.discriminator ?? DEFAULT_DISCRIMINATOR;
+		let groupMode: string | undefined = process.env[groupDiscriminator];
+
+		if (groupMode) {
+			log.debug(`Group '${name}': using ${groupDiscriminator} from environment: ${groupMode}`);
+		} else if (group.defaults) {
+			const availableModes = Object.keys(group.defaults);
+			if (availableModes.length > 0) {
+				if (group.onMissingDiscriminator) {
+					groupMode = group.onMissingDiscriminator({
+						discriminator: groupDiscriminator,
+						availableModes,
+						parent: { discriminator: parentDiscriminator, mode: parentMode },
+					});
+				} else {
+					// No callback → cascade to parent mode
+					groupMode = parentMode;
+					log.debug(`Group '${name}': falling back to parent mode: ${groupMode}`);
+				}
+			}
+		}
+
+		if (groupMode && group.defaults) {
+			const groupModeDefaults = group.defaults[groupMode];
+			if (groupModeDefaults) {
+				for (const [key, value] of Object.entries(groupModeDefaults)) {
+					if (value === undefined) {
+						explicitlyUnset.add(key);
+					} else {
+						merged[key] = value;
+						explicitlyUnset.delete(key);
+					}
+				}
+			}
+		}
+
+		// Recursively process nested subgroups, using this group's discriminator/mode as parent
+		if (group.groups) {
+			await applyGroupDefaults(group.groups, merged, explicitlyUnset, groupDiscriminator, groupMode, log);
+		}
+	}
+}
+
+/**
+ * Recursively collect validation results from all group schemas (flat for CLI output).
+ * Issues are pushed into allIssues; validated values are pushed into allGroupValues.
+ */
+async function collectGroupValidations(
+	groups: Record<string, GroupConfigRuntime>,
+	merged: Record<string, unknown>,
+	allIssues: ValidationIssue[],
+	allGroupValues: Array<Record<string, unknown>>,
+): Promise<void> {
+	for (const [, group] of Object.entries(groups)) {
+		const groupResult = await group.schema["~standard"].validate(merged);
+		if (groupResult.issues) {
+			allIssues.push(...(groupResult.issues as ValidationIssue[]));
+		} else if (groupResult.value) {
+			allGroupValues.push(groupResult.value as Record<string, unknown>);
+		}
+		if (group.groups) {
+			await collectGroupValidations(group.groups, merged, allIssues, allGroupValues);
+		}
+	}
 }
 
 /**
@@ -145,47 +226,10 @@ export async function buildMergedEnv<
 		}
 	}
 
-	// Process groups: resolve each group's mode and apply its defaults
+	// Process groups: resolve each group's mode and apply its defaults (recursively)
 	const groups = config.groups as Record<string, GroupConfigRuntime> | undefined;
 	if (groups) {
-		const rootDiscriminator = discriminator as string;
-		for (const [name, group] of Object.entries(groups)) {
-			const groupDiscriminator = group.discriminator ?? DEFAULT_DISCRIMINATOR;
-			let groupMode: string | undefined = process.env[groupDiscriminator];
-
-			if (groupMode) {
-				log.debug(`Group '${name}': using ${groupDiscriminator} from environment: ${groupMode}`);
-			} else if (group.defaults) {
-				const availableModes = Object.keys(group.defaults);
-				if (availableModes.length > 0) {
-					if (group.onMissingDiscriminator) {
-						groupMode = group.onMissingDiscriminator({
-							discriminator: groupDiscriminator,
-							availableModes,
-							parent: { discriminator: rootDiscriminator, mode },
-						});
-					} else {
-						// No callback → cascade to root mode
-						groupMode = mode;
-						log.debug(`Group '${name}': falling back to root mode: ${groupMode}`);
-					}
-				}
-			}
-
-			if (groupMode && group.defaults) {
-				const groupModeDefaults = group.defaults[groupMode];
-				if (groupModeDefaults) {
-					for (const [key, value] of Object.entries(groupModeDefaults)) {
-						if (value === undefined) {
-							explicitlyUnset.add(key);
-						} else {
-							merged[key] = value;
-							explicitlyUnset.delete(key);
-						}
-					}
-				}
-			}
-		}
+		await applyGroupDefaults(groups, merged, explicitlyUnset, discriminator as string, mode, log);
 	}
 
 	// Override with process.env values (only for keys that are set)
@@ -234,18 +278,11 @@ export async function resolveEnv<
 			rootValidated = rootResult.value as Record<string, unknown>;
 		}
 
-		// Validate each group schema independently
+		// Validate each group schema independently (recursively for nested groups)
 		const groups = config.groups as Record<string, GroupConfigRuntime> | undefined;
-		const groupResults = new Map<string, Record<string, unknown>>();
+		const allGroupValues: Array<Record<string, unknown>> = [];
 		if (groups) {
-			for (const [name, group] of Object.entries(groups)) {
-				const groupResult = await group.schema["~standard"].validate(merged);
-				if (groupResult.issues) {
-					allIssues.push(...(groupResult.issues as ValidationIssue[]));
-				} else if (groupResult.value) {
-					groupResults.set(name, groupResult.value as Record<string, unknown>);
-				}
-			}
+			await collectGroupValidations(groups, merged, allIssues, allGroupValues);
 		}
 
 		if (allIssues.length > 0) {
@@ -264,8 +301,8 @@ export async function resolveEnv<
 			}
 		}
 
-		// Flatten group validated outputs into the same env
-		for (const groupValidated of groupResults.values()) {
+		// Flatten group validated outputs into the same env (CLI always gets a flat record)
+		for (const groupValidated of allGroupValues) {
 			for (const [key, value] of Object.entries(groupValidated)) {
 				if (value !== undefined && value !== null && !explicitlyUnset.has(key)) {
 					env[key] = toEnvString(value);

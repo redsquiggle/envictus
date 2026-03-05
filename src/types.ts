@@ -44,9 +44,14 @@ type DiscriminatorValues<
  * Uses `string extends K ? never : K` to filter out the string index signature
  * from `Record<string, never>` (the default when no groups are provided),
  * leaving only concrete keys like `"stripe"` or `"auth"`.
+ *
+ * Recursively includes subgroup outputs when a group itself has `groups`.
  */
 export type GroupEnvOutput<TGroups extends Record<string, { schema: ObjectSchema }>> = {
-	[K in keyof TGroups as string extends K ? never : K]: InferOutput<TGroups[K]["schema"]>;
+	[K in keyof TGroups as string extends K ? never : K]: InferOutput<TGroups[K]["schema"]> &
+		(TGroups[K] extends { groups: infer TSubGroups extends Record<string, { schema: ObjectSchema }> }
+			? GroupEnvOutput<TSubGroups>
+			: unknown);
 };
 
 /**
