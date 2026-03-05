@@ -618,7 +618,6 @@ describe("groups", () => {
 			const env = await getEnv(config);
 
 			expect(env.stripe.STRIPE_SECRET_KEY).toBe("sk_test_123");
-			// @ts-expect-error - nested namespace access (types.test.ts covers the type shape)
 			expect(env.stripe.payment.PAYMENT_KEY).toBe("pay_test_123");
 		});
 

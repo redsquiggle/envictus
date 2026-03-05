@@ -49,7 +49,7 @@ type DiscriminatorValues<
  */
 export type GroupEnvOutput<TGroups extends Record<string, { schema: ObjectSchema }>> = {
 	[K in keyof TGroups as string extends K ? never : K]: InferOutput<TGroups[K]["schema"]> &
-		(TGroups[K] extends { groups: infer TSubGroups extends Record<string, { schema: ObjectSchema }> }
+		(TGroups[K] extends { groups?: infer TSubGroups extends Record<string, { schema: ObjectSchema }> }
 			? GroupEnvOutput<TSubGroups>
 			: unknown);
 };

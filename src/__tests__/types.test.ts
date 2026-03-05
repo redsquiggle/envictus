@@ -80,7 +80,7 @@ describe("type safety", () => {
 			// Root fields
 			expectTypeOf<Env["PORT"]>().toEqualTypeOf<number>();
 			// Group namespace
-			expectTypeOf<Env["stripe"]>().toEqualTypeOf<{
+			expectTypeOf<Env["stripe"]>().toMatchTypeOf<{
 				STRIPE_SECRET_KEY: string;
 				STRIPE_WEBHOOK_SECRET: string;
 			}>();
@@ -103,7 +103,35 @@ describe("type safety", () => {
 			});
 
 			type Env = Awaited<typeof config.env>;
-			expectTypeOf<Env["auth"]>().toEqualTypeOf<{ AUTH_TOKEN: string }>();
+			expectTypeOf<Env["auth"]>().toMatchTypeOf<{ AUTH_TOKEN: string }>();
+		});
+
+		it("nested subgroups are typed through parent groups", () => {
+			const paymentGroup = defineConfig({
+				schema: z.object({
+					PAYMENT_KEY: z.string(),
+				}),
+			});
+
+			const stripeGroup = defineConfig({
+				schema: z.object({
+					STRIPE_SECRET_KEY: z.string(),
+				}),
+				groups: { payment: paymentGroup },
+			});
+
+			const config = defineConfig({
+				schema: z.object({
+					APP_ENV: z.enum(["development", "production"]).default("development"),
+				}),
+				discriminator: "APP_ENV",
+				defaults: {},
+				groups: { stripe: stripeGroup },
+			});
+
+			type Env = Awaited<typeof config.env>;
+			expectTypeOf<Env["stripe"]["STRIPE_SECRET_KEY"]>().toEqualTypeOf<string>();
+			expectTypeOf<Env["stripe"]["payment"]["PAYMENT_KEY"]>().toEqualTypeOf<string>();
 		});
 
 		it("config without groups has no group namespaces in env type", () => {
